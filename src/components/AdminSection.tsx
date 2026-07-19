@@ -75,47 +75,52 @@ export default function AdminSection({
     setUploadingId(uploadId);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        
-        const response = await fetch(`${API_URL}/api/admin/upload`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileName: file.name,
-            base64Data: base64Data,
-          }),
-        });
+      // Read the file as base64, properly awaited so errors surface below
+      const base64Data: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read the selected file"));
+        reader.readAsDataURL(file);
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to upload image");
-        }
+      const response = await fetch(`${API_URL}/api/admin/upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          base64Data: base64Data,
+        }),
+      });
 
-        const result = await response.json();
-        if (result.success && result.url) {
-          if (websiteImageIndex !== undefined) {
-            const updated = [...(settingsForm.websiteImages || [])];
-            updated[websiteImageIndex] = { ...updated[websiteImageIndex], src: result.url };
-            setSettingsForm({ ...settingsForm, websiteImages: updated });
-          } else if (targetKey.startsWith("gallery-")) {
-            const idx = parseInt(targetKey.split("-")[1]);
-            const updatedGallery = [...(settingsForm.galleryImages || [])];
-            updatedGallery[idx] = result.url;
-            setSettingsForm({ ...settingsForm, galleryImages: updatedGallery });
-          } else if (targetKey === "menu-item") {
-            setMenuFormData(prev => ({ ...prev, image: result.url }));
-          } else {
-            setSettingsForm(prev => ({ ...prev, [targetKey]: result.url }));
-          }
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || `Upload failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.url) {
+        if (websiteImageIndex !== undefined) {
+          const updated = [...(settingsForm.websiteImages || [])];
+          updated[websiteImageIndex] = { ...updated[websiteImageIndex], src: result.url };
+          setSettingsForm({ ...settingsForm, websiteImages: updated });
+        } else if (targetKey.startsWith("gallery-")) {
+          const idx = parseInt(targetKey.split("-")[1]);
+          const updatedGallery = [...(settingsForm.galleryImages || [])];
+          updatedGallery[idx] = result.url;
+          setSettingsForm({ ...settingsForm, galleryImages: updatedGallery });
+        } else if (targetKey === "menu-item") {
+          setMenuFormData(prev => ({ ...prev, image: result.url }));
+        } else {
+          setSettingsForm(prev => ({ ...prev, [targetKey]: result.url }));
         }
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
+      } else {
+        throw new Error("Upload response did not include an image URL");
+      }
+    } catch (error: any) {
       console.error("Upload failed:", error);
-      alert("Failed to upload image. Please try again.");
+      alert(`Failed to upload image: ${error.message || "please try again."}`);
     } finally {
       setUploadingId(null);
     }

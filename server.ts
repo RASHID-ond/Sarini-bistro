@@ -13,6 +13,13 @@ app.use(
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
+// Ensure API responses are never cached by any intermediate proxy/CDN,
+// so admin content changes are always visible immediately.
+app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 // Supabase client (service role key — backend only, never expose to frontend)
 const supabase = createClient(
   process.env.SUPABASE_URL!,
