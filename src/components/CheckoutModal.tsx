@@ -1,6 +1,7 @@
 import React from "react";
 import { X, MapPin, Phone, Mail, User, ShieldCheck, CheckCircle2, AlertCircle, Sparkles, CreditCard, ShoppingBag } from "lucide-react";
 import { CartItem, Order } from "../types";
+import { API_URL } from "../config";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ export default function CheckoutModal({
     if (pollingStatus === "polling" && checkoutId) {
       const poll = async () => {
         try {
-          const res = await fetch(`/api/payments/mpesa/status/${checkoutId}`);
+          const res = await fetch(`${API_URL}/api/payments/mpesa/status/${checkoutId}`);
           if (res.ok) {
             const data = await res.json();
             if (data.paymentStatus === "paid") {
@@ -144,7 +145,7 @@ export default function CheckoutModal({
           setPollingStatus("polling");
           setTimeout(async () => {
             try {
-              await fetch(`/api/orders/${order.id}/status`, {
+              await fetch(`${API_URL}/api/orders/${order.id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ paymentStatus: "paid", orderStatus: "confirmed" })

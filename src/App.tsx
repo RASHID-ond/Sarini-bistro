@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
+import { API_URL } from "./config";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
@@ -196,7 +197,7 @@ export default function App() {
   const fetchAllData = React.useCallback(async () => {
     try {
       // 1. Menu Items
-      const menuRes = await fetch("/api/menu");
+      const menuRes = await fetch(`${API_URL}/api/menu`);
       if (menuRes.ok) {
         const menuData = await menuRes.json();
         setMenuItems(menuData.menu_items || []);
@@ -204,32 +205,32 @@ export default function App() {
       }
 
       // 2. Public Settings
-      const settingsRes = await fetch("/api/settings");
+      const settingsRes = await fetch(`${API_URL}/api/settings`);
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
         setSettings(prev => ({ ...prev, ...settingsData }));
       }
 
       // 3. Admin Data (if authenticated/available, we fetch all in background)
-      const ordersRes = await fetch("/api/orders");
+      const ordersRes = await fetch(`${API_URL}/api/orders`);
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
         setOrders(ordersData);
       }
 
-      const resRes = await fetch("/api/reservations");
+      const resRes = await fetch(`${API_URL}/api/reservations`);
       if (resRes.ok) {
         const resData = await resRes.json();
         setReservations(resData);
       }
 
-      const logsRes = await fetch("/api/notifications/logs");
+      const logsRes = await fetch(`${API_URL}/api/notifications/logs`);
       if (logsRes.ok) {
         const logsData = await logsRes.json();
         setNotificationLogs(logsData);
       }
 
-      const analyticsRes = await fetch("/api/analytics");
+      const analyticsRes = await fetch(`${API_URL}/api/analytics`);
       if (analyticsRes.ok) {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData);
@@ -280,7 +281,7 @@ export default function App() {
   // Checkout API interactions
   const handlePlaceOrder = async (orderData: any): Promise<Order | null> => {
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
@@ -298,7 +299,7 @@ export default function App() {
 
   const handleInitiateMpesa = async (orderId: string, phone: string, amount: number) => {
     try {
-      const res = await fetch("/api/payments/mpesa/initiate", {
+      const res = await fetch(`${API_URL}/api/payments/mpesa/initiate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, phone, amount }),
@@ -314,7 +315,7 @@ export default function App() {
 
   const handleSearchOrder = async (id: string): Promise<Order | null> => {
     try {
-      const res = await fetch(`/api/orders/${id}`);
+      const res = await fetch(`${API_URL}/api/orders/${id}`);
       if (res.ok) {
         return await res.json();
       }
@@ -327,7 +328,7 @@ export default function App() {
   // Reservation booking
   const handleAddReservation = async (reservationData: any): Promise<Reservation | null> => {
     try {
-      const res = await fetch("/api/reservations", {
+      const res = await fetch(`${API_URL}/api/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(reservationData),
@@ -346,7 +347,7 @@ export default function App() {
   // Admin status mutations
   const handleUpdateOrderStatus = async (orderId: string, status: string, payStatus?: string) => {
     try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
+      const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderStatus: status, paymentStatus: payStatus }),
@@ -361,7 +362,7 @@ export default function App() {
 
   const handleUpdateReservationStatus = async (resId: string, status: string) => {
     try {
-      const res = await fetch(`/api/reservations/${resId}/status`, {
+      const res = await fetch(`${API_URL}/api/reservations/${resId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -377,7 +378,7 @@ export default function App() {
   // Menu alterations
   const handleAddMenuItem = async (data: any): Promise<boolean> => {
     try {
-      const res = await fetch("/api/menu/items", {
+      const res = await fetch(`${API_URL}/api/menu/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -394,7 +395,7 @@ export default function App() {
 
   const handleEditMenuItem = async (id: string, data: any): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/menu/items/${id}`, {
+      const res = await fetch(`${API_URL}/api/menu/items/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -411,7 +412,7 @@ export default function App() {
 
   const handleDeleteMenuItem = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/menu/items/${id}`, {
+      const res = await fetch(`${API_URL}/api/menu/items/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -426,7 +427,7 @@ export default function App() {
 
   const handleAddCategory = async (name: string): Promise<boolean> => {
     try {
-      const res = await fetch("/api/menu/categories", {
+      const res = await fetch(`${API_URL}/api/menu/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
@@ -443,7 +444,7 @@ export default function App() {
 
   const handleUpdateSettings = async (data: any): Promise<boolean> => {
     try {
-      const res = await fetch("/api/admin/settings", {
+      const res = await fetch(`${API_URL}/api/admin/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

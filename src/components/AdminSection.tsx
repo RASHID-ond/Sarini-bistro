@@ -3,6 +3,7 @@ import {
   ClipboardList, Calendar, Plus, Edit3, Trash2, TrendingUp, Settings, Bell, RefreshCw, CheckCircle2, XCircle, Clock, Truck, Play, CreditCard, DollarSign, Users, Sparkles, LogIn, Upload, Loader2
 } from "lucide-react";
 import { Order, Reservation, MenuItem, NotificationLog, RestaurantSettings, AnalyticsStats } from "../types";
+import { API_URL } from "../config";
 
 interface AdminSectionProps {
   orders: Order[];
@@ -78,7 +79,7 @@ export default function AdminSection({
       reader.onloadend = async () => {
         const base64Data = reader.result as string;
         
-        const response = await fetch("/api/admin/upload", {
+        const response = await fetch(`${API_URL}/api/admin/upload`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

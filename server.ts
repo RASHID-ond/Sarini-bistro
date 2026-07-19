@@ -1,28 +1,24 @@
 import express from "express";
-import path from "path";
-import fs from "fs";
-import { createServer as createViteServer } from "vite";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import cors from "cors";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : "*",
+  })
+);
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
-// Serve uploads directory
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// Database File Path
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
-
-// Ensure data directory exists
-if (!fs.existsSync(path.dirname(DB_PATH))) {
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-}
+// Supabase client (service role key — backend only, never expose to frontend)
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "images";
 
 // Initial Database Structure
 interface MenuItem {
@@ -298,10 +294,16 @@ const DEFAULT_SETTINGS = {
   ]
 };
 
-// Database state accessor functions
-function readDb(): DbSchema {
+// Database state accessor functions — backed by a single JSONB row in Supabase
+async function readDb(): Promise<DbSchema> {
   try {
-    if (!fs.existsSync(DB_PATH)) {
+    const { data, error } = await supabase
+      .from("app_state")
+      .select("data")
+      .eq("id", 1)
+      .single();
+
+    if (error || !data) {
       const initialDb: DbSchema = {
         menu_items: DEFAULT_MENU_ITEMS,
         categories: DEFAULT_CATEGORIES,
@@ -310,35 +312,15 @@ function readDb(): DbSchema {
         settings: DEFAULT_SETTINGS,
         notification_logs: []
       };
-      fs.writeFileSync(DB_PATH, JSON.stringify(initialDb, null, 2), "utf8");
+      await supabase.from("app_state").upsert({ id: 1, data: initialDb });
       return initialDb;
     }
-    const data = fs.readFileSync(DB_PATH, "utf8");
-    const db = JSON.parse(data);
-    db.settings = { ...DEFAULT_SETTINGS, ...db.settings };
-    
-    // Auto-migrate database values to Kenyan Shillings if they are still USD format (detect if deliveryFee or item prices are very small)
-    let migrated = false;
-    if (db.menu_items && db.menu_items.length > 0) {
-      db.menu_items.forEach((item: any) => {
-        if (item.price < 50) {
-          // Find standard multiplier (e.g. 125) or fallback to approximate Shilling value
-          item.price = Math.round(item.price * 125);
-          migrated = true;
-        }
-      });
-    }
-    if (db.settings && db.settings.deliveryFee < 50) {
-      db.settings.deliveryFee = 250;
-      migrated = true;
-    }
-    if (migrated) {
-      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
-    }
 
+    const db: DbSchema = data.data;
+    db.settings = { ...DEFAULT_SETTINGS, ...db.settings };
     return db;
   } catch (err) {
-    console.error("Error reading database file", err);
+    console.error("Error reading database from Supabase", err);
     return {
       menu_items: DEFAULT_MENU_ITEMS,
       categories: DEFAULT_CATEGORIES,
@@ -350,17 +332,19 @@ function readDb(): DbSchema {
   }
 }
 
-function writeDb(db: DbSchema) {
+async function writeDb(db: DbSchema) {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
+    await supabase
+      .from("app_state")
+      .upsert({ id: 1, data: db, updated_at: new Date().toISOString() });
   } catch (err) {
-    console.error("Error writing database file", err);
+    console.error("Error writing database to Supabase", err);
   }
 }
 
 // Helper to log notifications
-function logNotification(recipient: string, type: "email" | "sms", channel: string, message: string, status: "success" | "failed", details?: { orderId?: string; reservationId?: string }) {
-  const db = readDb();
+async function logNotification(recipient: string, type: "email" | "sms", channel: string, message: string, status: "success" | "failed", details?: { orderId?: string; reservationId?: string }) {
+  const db = await readDb();
   const log: NotificationLog = {
     id: "notif_" + Math.random().toString(36).substring(2, 11),
     recipient,
@@ -376,12 +360,12 @@ function logNotification(recipient: string, type: "email" | "sms", channel: stri
   if (db.notification_logs.length > 200) {
     db.notification_logs = db.notification_logs.slice(0, 200);
   }
-  writeDb(db);
+  await writeDb(db);
 }
 
 // RESTAURANT NOTIFICATION LOGIC
 async function sendNotification(recipient: string, type: "email" | "sms", message: string, details?: { orderId?: string; reservationId?: string }) {
-  const db = readDb();
+  const db = await readDb();
   const settings = db.settings;
 
   if (type === "email") {
@@ -391,26 +375,26 @@ async function sendNotification(recipient: string, type: "email" | "sms", messag
     const isConfigured = settings.smtpHost && settings.smtpPort && settings.smtpUser && settings.smtpPass;
     const channel = "SMTP Mailer";
     console.log(`[EMAIL SEND] To: ${recipient} | Message: ${message}`);
-    logNotification(recipient, "email", channel, message, "success", details);
+    await logNotification(recipient, "email", channel, message, "success", details);
   } else {
     // SMS Setup (Africa's Talking / Twilio)
     const isConfigured = settings.atApiKey && settings.atUsername;
     const channel = isConfigured ? "Africa's Talking" : "Gateway Simulator";
     console.log(`[SMS SEND] To: ${recipient} | Message: ${message}`);
-    logNotification(recipient, "sms", channel, message, "success", details);
+    await logNotification(recipient, "sms", channel, message, "success", details);
   }
 }
 
 // ---------------------- API ROUTES ----------------------
 
 // 1. Menu Management API
-app.get("/api/menu", (req, res) => {
-  const db = readDb();
+app.get("/api/menu", async (req, res) => {
+  const db = await readDb();
   res.json({ menu_items: db.menu_items, categories: db.categories });
 });
 
-app.post("/api/menu/items", (req, res) => {
-  const db = readDb();
+app.post("/api/menu/items", async (req, res) => {
+  const db = await readDb();
   const { name, description, price, category, image, available } = req.body;
   if (!name || !price || !category) {
     return res.status(400).json({ error: "Name, price and category are required" });
@@ -425,12 +409,12 @@ app.post("/api/menu/items", (req, res) => {
     available: available !== undefined ? available : true
   };
   db.menu_items.push(newItem);
-  writeDb(db);
+  await writeDb(db);
   res.status(201).json(newItem);
 });
 
-app.put("/api/menu/items/:id", (req, res) => {
-  const db = readDb();
+app.put("/api/menu/items/:id", async (req, res) => {
+  const db = await readDb();
   const { id } = req.params;
   const index = db.menu_items.findIndex(item => item.id === id);
   if (index === -1) {
@@ -446,25 +430,25 @@ app.put("/api/menu/items/:id", (req, res) => {
     image: image !== undefined ? image : db.menu_items[index].image,
     available: available !== undefined ? available : db.menu_items[index].available,
   };
-  writeDb(db);
+  await writeDb(db);
   res.json(db.menu_items[index]);
 });
 
-app.delete("/api/menu/items/:id", (req, res) => {
-  const db = readDb();
+app.delete("/api/menu/items/:id", async (req, res) => {
+  const db = await readDb();
   const { id } = req.params;
   const filtered = db.menu_items.filter(item => item.id !== id);
   if (filtered.length === db.menu_items.length) {
     return res.status(404).json({ error: "Menu item not found" });
   }
   db.menu_items = filtered;
-  writeDb(db);
+  await writeDb(db);
   res.json({ message: "Menu item deleted successfully" });
 });
 
 // Categories API
-app.post("/api/menu/categories", (req, res) => {
-  const db = readDb();
+app.post("/api/menu/categories", async (req, res) => {
+  const db = await readDb();
   const { name } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Category name is required" });
@@ -473,18 +457,18 @@ app.post("/api/menu/categories", (req, res) => {
     return res.status(400).json({ error: "Category already exists" });
   }
   db.categories.push(name);
-  writeDb(db);
+  await writeDb(db);
   res.status(201).json({ categories: db.categories });
 });
 
 // 2. Orders API
-app.get("/api/orders", (req, res) => {
-  const db = readDb();
+app.get("/api/orders", async (req, res) => {
+  const db = await readDb();
   res.json(db.orders);
 });
 
-app.get("/api/orders/:id", (req, res) => {
-  const db = readDb();
+app.get("/api/orders/:id", async (req, res) => {
+  const db = await readDb();
   const order = db.orders.find(o => o.id === req.params.id);
   if (!order) {
     return res.status(404).json({ error: "Order not found" });
@@ -493,7 +477,7 @@ app.get("/api/orders/:id", (req, res) => {
 });
 
 app.post("/api/orders", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const {
     customerName,
     customerPhone,
@@ -547,7 +531,7 @@ app.post("/api/orders", async (req, res) => {
   };
 
   db.orders.unshift(newOrder);
-  writeDb(db);
+  await writeDb(db);
 
   // Send Order Placement Notification
   const orderMsg = `Thank you ${customerName}! Your Sarini Bistro order ${orderId} for Ksh ${total.toLocaleString()} (${orderType === "delivery" ? "Delivery" : "Pickup"}) has been received. Status: Pending.`;
@@ -562,7 +546,7 @@ app.post("/api/orders", async (req, res) => {
 
 // Update order status
 app.put("/api/orders/:id/status", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const { id } = req.params;
   const { orderStatus, paymentStatus } = req.body;
 
@@ -579,7 +563,7 @@ app.put("/api/orders/:id/status", async (req, res) => {
   if (paymentStatus !== undefined) order.paymentStatus = paymentStatus;
 
   db.orders[index] = order;
-  writeDb(db);
+  await writeDb(db);
 
   // Notify customer about status change
   if (orderStatus !== undefined && orderStatus !== oldStatus) {
@@ -608,13 +592,13 @@ app.put("/api/orders/:id/status", async (req, res) => {
 });
 
 // 3. Table Reservations API
-app.get("/api/reservations", (req, res) => {
-  const db = readDb();
+app.get("/api/reservations", async (req, res) => {
+  const db = await readDb();
   res.json(db.reservations);
 });
 
 app.post("/api/reservations", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const { customerName, customerPhone, customerEmail, date, time, guests, seatingArea, specialRequests } = req.body;
 
   if (!customerName || !customerPhone || !date || !time || !guests) {
@@ -637,7 +621,7 @@ app.post("/api/reservations", async (req, res) => {
   };
 
   db.reservations.unshift(newReservation);
-  writeDb(db);
+  await writeDb(db);
 
   // Send reservation SMS & email
   const resMsg = `Table confirmed! Res #${reservationId} at Sarini Bistro on ${date} at ${time} for ${guests} guests (${seatingArea.toUpperCase()} area). We look forward to hosting you!`;
@@ -652,7 +636,7 @@ app.post("/api/reservations", async (req, res) => {
 });
 
 app.put("/api/reservations/:id/status", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const { id } = req.params;
   const { status } = req.body;
 
@@ -662,7 +646,7 @@ app.put("/api/reservations/:id/status", async (req, res) => {
   }
 
   db.reservations[index].status = status;
-  writeDb(db);
+  await writeDb(db);
 
   // Send status update message if cancelled
   if (status === "cancelled") {
@@ -675,8 +659,8 @@ app.put("/api/reservations/:id/status", async (req, res) => {
 });
 
 // 4. Analytics & Dashboard Stats
-app.get("/api/analytics", (req, res) => {
-  const db = readDb();
+app.get("/api/analytics", async (req, res) => {
+  const db = await readDb();
   const orders = db.orders;
   
   // Calculate key metrics
@@ -747,14 +731,14 @@ app.get("/api/analytics", (req, res) => {
 });
 
 // 5. Notification Logs
-app.get("/api/notifications/logs", (req, res) => {
-  const db = readDb();
+app.get("/api/notifications/logs", async (req, res) => {
+  const db = await readDb();
   res.json(db.notification_logs || []);
 });
 
 // 6. Settings API
-app.get("/api/settings", (req, res) => {
-  const db = readDb();
+app.get("/api/settings", async (req, res) => {
+  const db = await readDb();
   // Strip out secrets before sending to client for security
   const {
     mpesaConsumerKey,
@@ -768,13 +752,13 @@ app.get("/api/settings", (req, res) => {
 });
 
 // Get admin settings with secrets (require simple authorization or just return for this environment setup)
-app.get("/api/admin/settings", (req, res) => {
-  const db = readDb();
+app.get("/api/admin/settings", async (req, res) => {
+  const db = await readDb();
   res.json(db.settings);
 });
 
-app.put("/api/admin/settings", (req, res) => {
-  const db = readDb();
+app.put("/api/admin/settings", async (req, res) => {
+  const db = await readDb();
 
   db.settings = {
     ...db.settings,
@@ -789,12 +773,12 @@ app.put("/api/admin/settings", (req, res) => {
     db.settings.smtpPort = parseInt(req.body.smtpPort);
   }
 
-  writeDb(db);
+  await writeDb(db);
   res.json({ message: "Settings updated successfully", settings: db.settings });
 });
 
-// Image Upload API
-app.post("/api/admin/upload", (req, res) => {
+// Image Upload API — stores images in Supabase Storage instead of local disk
+app.post("/api/admin/upload", async (req, res) => {
   try {
     const { fileName, base64Data } = req.body;
     if (!base64Data) {
@@ -804,29 +788,34 @@ app.post("/api/admin/upload", (req, res) => {
     // Strip header metadata prefix (e.g. "data:image/png;base64,")
     const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
     let dataBuffer: Buffer;
+    let contentType = "image/jpeg";
 
     if (matches && matches.length === 3) {
+      contentType = matches[1];
       dataBuffer = Buffer.from(matches[2], "base64");
     } else {
       // Direct raw base64
       dataBuffer = Buffer.from(base64Data, "base64");
     }
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
     const fileExtension = fileName ? fileName.split(".").pop() : "jpg";
     const uniqueFileName = `uploaded_img_${Date.now()}_${Math.floor(100 + Math.random() * 900)}.${fileExtension}`;
-    const destinationPath = path.join(uploadsDir, uniqueFileName);
 
-    fs.writeFileSync(destinationPath, dataBuffer);
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(uniqueFileName, dataBuffer, { contentType, upsert: false });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(uniqueFileName);
 
     res.json({
       success: true,
-      url: `/uploads/${uniqueFileName}`
+      url: publicUrlData.publicUrl
     });
   } catch (err: any) {
     console.error("File upload error:", err);
@@ -836,7 +825,7 @@ app.post("/api/admin/upload", (req, res) => {
 
 // 7. M-PESA INTEGRATION API
 app.post("/api/payments/mpesa/initiate", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const { orderId, phone, amount } = req.body;
 
   if (!orderId || !phone || !amount) {
@@ -910,7 +899,7 @@ app.post("/api/payments/mpesa/initiate", async (req, res) => {
       const checkoutRequestId = stkData.CheckoutRequestID || "req_" + Math.random().toString(36).substring(2, 11);
 
       db.orders[orderIndex].mpesaCheckoutRequestId = checkoutRequestId;
-      writeDb(db);
+      await writeDb(db);
 
       res.json({
         success: true,
@@ -927,11 +916,11 @@ app.post("/api/payments/mpesa/initiate", async (req, res) => {
   // --- M-PESA SIMULATOR FALLBACK (STUNNING INTERACTIVE DEVELOPER/USER EXPERIENCE) ---
   const simulatedCheckoutId = "ws_CO_" + Math.random().toString(36).substring(2, 15).toUpperCase();
   db.orders[orderIndex].mpesaCheckoutRequestId = simulatedCheckoutId;
-  writeDb(db);
+  await writeDb(db);
 
   // Simulate payment callback after 8 seconds
   setTimeout(async () => {
-    const liveDb = readDb();
+    const liveDb = await readDb();
     const targetOrderIndex = liveDb.orders.findIndex(o => o.id === orderId);
     if (targetOrderIndex !== -1 && liveDb.orders[targetOrderIndex].paymentStatus === "pending") {
       liveDb.orders[targetOrderIndex].paymentStatus = "paid";
@@ -957,8 +946,8 @@ app.post("/api/payments/mpesa/initiate", async (req, res) => {
 });
 
 // M-Pesa Status Polling API
-app.get("/api/payments/mpesa/status/:checkoutRequestId", (req, res) => {
-  const db = readDb();
+app.get("/api/payments/mpesa/status/:checkoutRequestId", async (req, res) => {
+  const db = await readDb();
   const { checkoutRequestId } = req.params;
   const order = db.orders.find(o => o.mpesaCheckoutRequestId === checkoutRequestId);
 
@@ -983,7 +972,7 @@ app.post("/api/payments/mpesa/callback", async (req, res) => {
   }
 
   const { MerchantRequestID, CheckoutRequestID, ResultCode, ResultDesc } = Body.stkCallback;
-  const db = readDb();
+  const db = await readDb();
 
   const orderIndex = db.orders.findIndex(o => o.mpesaCheckoutRequestId === CheckoutRequestID);
   if (orderIndex === -1) {
@@ -997,7 +986,7 @@ app.post("/api/payments/mpesa/callback", async (req, res) => {
     // Payment Successful
     db.orders[orderIndex].paymentStatus = "paid";
     db.orders[orderIndex].orderStatus = "confirmed";
-    writeDb(db);
+    await writeDb(db);
 
     const amount = Math.round(order.total * 125);
     const successMsg = `Payment CONFIRMED! Received Ksh ${amount} for order ${order.id}. Your meal is now being prepared!`;
@@ -1007,7 +996,7 @@ app.post("/api/payments/mpesa/callback", async (req, res) => {
   } else {
     // Payment Failed or Cancelled
     db.orders[orderIndex].paymentStatus = "failed";
-    writeDb(db);
+    await writeDb(db);
 
     const failMsg = `M-Pesa payment failed for order ${order.id}. Reason: ${ResultDesc}. Please try checking out again or choose Cash on Delivery.`;
     await sendNotification(order.customerPhone, "sms", failMsg, { orderId: order.id });
@@ -1019,20 +1008,10 @@ app.post("/api/payments/mpesa/callback", async (req, res) => {
 });
 
 
-// Serve static assets in production, hook up Vite in dev
-if (process.env.NODE_ENV !== "production") {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
-} else {
-  const distPath = path.join(process.cwd(), "dist");
-  app.use(express.static(distPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-}
+// This server is API-only — the frontend is deployed separately (e.g. on Vercel)
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Sarini Bistro API is running" });
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);

@@ -1,6 +1,6 @@
 {
   "name": "Eateria",
   "description": "A premium, dark-themed restaurant landing page with cinematic lighting, online ordering, reservations, and admin features.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "requestFramePermissions": []
 }
+
