@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { Order, Reservation, MenuItem, NotificationLog, RestaurantSettings, AnalyticsStats } from "../types";
 import { API_URL } from "../config";
+import { compressImage } from "../utils/compressImage";
 
 interface AdminSectionProps {
   orders: Order[];
@@ -75,13 +76,9 @@ export default function AdminSection({
     setUploadingId(uploadId);
 
     try {
-      // Read the file as base64, properly awaited so errors surface below
-      const base64Data: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Failed to read the selected file"));
-        reader.readAsDataURL(file);
-      });
+      // Compress large photos client-side before sending: accepts up to 15MB,
+      // resizes/re-encodes so the network payload and stored file stay small.
+      const { dataUrl: base64Data, fileName: uploadFileName } = await compressImage(file);
 
       const response = await fetch(`${API_URL}/api/admin/upload`, {
         method: "POST",
@@ -89,7 +86,7 @@ export default function AdminSection({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fileName: file.name,
+          fileName: uploadFileName,
           base64Data: base64Data,
         }),
       });
