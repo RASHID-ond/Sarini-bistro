@@ -5,9 +5,13 @@ import { createClient } from "@supabase/supabase-js";
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map(o => o.trim())
+  : ["*"];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : "*",
+    origin: allowedOrigins.includes("*") ? "*" : allowedOrigins,
   })
 );
 app.use(express.json({ limit: "20mb" }));

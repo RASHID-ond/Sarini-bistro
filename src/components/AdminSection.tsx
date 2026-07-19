@@ -126,10 +126,16 @@ export default function AdminSection({
     }
   };
 
-  // Update local settings form state when prop settings changes
+  // Sync local settings form from the server exactly once, on first load.
+  // After that, this form is owned by the admin: background polling refreshes
+  // (every 10s in App.tsx) must NEVER silently overwrite in-progress edits or
+  // an uploaded-but-not-yet-saved image. The form only updates again through
+  // explicit admin actions (typing, uploading) or a successful Save.
+  const settingsInitializedRef = React.useRef(false);
   React.useEffect(() => {
-    if (settings) {
+    if (settings && !settingsInitializedRef.current) {
       setSettingsForm({ ...settings });
+      settingsInitializedRef.current = true;
     }
   }, [settings]);
 
