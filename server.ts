@@ -824,6 +824,27 @@ app.post("/api/admin/upload", async (req, res) => {
       .from(STORAGE_BUCKET)
       .getPublicUrl(uniqueFileName);
 
+    // Verify the image is actually reachable at the public URL before
+    // reporting success. If the bucket isn't marked Public in Supabase,
+    // the upload itself succeeds (service role key bypasses RLS) but the
+    // browser would silently fail to display the image later. Catch that
+    // here instead, with a clear, actionable error.
+    try {
+      const verifyRes = await fetch(publicUrlData.publicUrl, { method: "HEAD" });
+      if (!verifyRes.ok) {
+        // Clean up the orphaned file since it can't actually be used
+        await supabase.storage.from(STORAGE_BUCKET).remove([uniqueFileName]);
+        return res.status(502).json({
+          error: `Image uploaded but is not publicly accessible (HTTP ${verifyRes.status}). Go to Supabase → Storage → "${STORAGE_BUCKET}" bucket → make sure "Public bucket" is enabled.`
+        });
+      }
+    } catch (verifyErr) {
+      await supabase.storage.from(STORAGE_BUCKET).remove([uniqueFileName]);
+      return res.status(502).json({
+        error: `Image uploaded but could not be verified as publicly accessible. Check that the "${STORAGE_BUCKET}" bucket exists and is set to Public in Supabase.`
+      });
+    }
+
     res.json({
       success: true,
       url: publicUrlData.publicUrl
