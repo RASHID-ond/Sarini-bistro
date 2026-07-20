@@ -33,6 +33,8 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
   const headline = settings.heroHeadline || "Authentic Kenyan Flavors on the A1 Highway in Kitale";
   const subtitle = settings.heroSubtitle || "Savor the finest slow-roasted Mbuzi Choma, spicy Chips Masala, and hot flame-grilled meats. A perfect traveler's stopover!";
   const heroImgUrl = settings.heroImage || "";
+  const heroBackgroundUrl = settings.heroBackgroundImage || "";
+  const [heroBgLoaded, setHeroBgLoaded] = React.useState(false);
   const operatingHrsText = settings.operatingHours || "6:30 AM – 8:30 PM";
   const operatingDaysText = settings.operatingDays || "Open 7 Days a Week";
 
@@ -95,26 +97,53 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
         
-        {settings.logoUrl && (
-          <div className="flex justify-center mb-2 animate-bounce-slow">
-            <img 
-              src={settings.logoUrl} 
-              alt={`${settings.restaurantName} Logo`} 
-              className="h-20 w-20 object-contain rounded-full border border-brand-coral/20 p-1 bg-zinc-950 shadow-xl" 
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        )}
+        <div className="relative">
+          {heroBackgroundUrl && (
+            <div className="absolute inset-0 -z-10 overflow-hidden rounded-[32px] pointer-events-none">
+              <img
+                src={heroBackgroundUrl}
+                alt=""
+                onLoad={() => setHeroBgLoaded(true)}
+                className={`w-full h-full object-cover transition-opacity duration-[1400ms] ease-out ${heroBgLoaded ? "opacity-100" : "opacity-0"}`}
+                referrerPolicy="no-referrer"
+              />
+              {/* Soft scrim for text contrast, using the theme-aware blend color */}
+              <div className="absolute inset-0" style={{ background: "var(--hero-scrim)" }} />
+              {/* Edge fades so the image blends into the page rather than showing hard edges */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, var(--hero-blend-bg) 0%, transparent 22%, transparent 75%, var(--hero-blend-bg) 100%), " +
+                    "linear-gradient(to right, var(--hero-blend-bg) 0%, transparent 15%, transparent 85%, var(--hero-blend-bg) 100%)"
+                }}
+              />
+            </div>
+          )}
 
-        {/* Sarini Bistro Main Responsive Headline */}
-        <div className="max-w-[720px] mx-auto space-y-5">
-          <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight text-[#F5F5F7] leading-[1.1] font-sans">
-            {headline}
-          </h1>
-          
-          <p className="text-xs sm:text-sm text-[#A8A8B3] max-w-2xl mx-auto leading-relaxed tracking-wide font-medium">
-            {subtitle}
-          </p>
+          <div className="py-8 px-4 sm:px-8">
+            {settings.logoUrl && (
+              <div className="flex justify-center mb-2 animate-bounce-slow">
+                <img 
+                  src={settings.logoUrl} 
+                  alt={`${settings.restaurantName} Logo`} 
+                  className="h-20 w-20 object-contain rounded-full border border-brand-coral/20 p-1 bg-zinc-950 shadow-xl" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
+
+            {/* Sarini Bistro Main Responsive Headline */}
+            <div className="max-w-[720px] mx-auto space-y-5">
+              <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight text-[#F5F5F7] leading-[1.1] font-sans">
+                {headline}
+              </h1>
+              
+              <p className="text-xs sm:text-sm text-[#A8A8B3] max-w-2xl mx-auto leading-relaxed tracking-wide font-medium">
+                {subtitle}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Elegant Action Buttons matching specifications */}

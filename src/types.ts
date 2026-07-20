@@ -88,6 +88,7 @@ export interface RestaurantSettings {
   heroHeadline?: string;
   heroSubtitle?: string;
   heroImage?: string;
+  heroBackgroundImage?: string;
   aboutTitle?: string;
   aboutSubtitle?: string;
   aboutStory?: string;

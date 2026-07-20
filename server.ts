@@ -121,6 +121,7 @@ interface DbSchema {
     heroHeadline?: string;
     heroSubtitle?: string;
     heroImage?: string;
+    heroBackgroundImage?: string;
     aboutTitle?: string;
     aboutSubtitle?: string;
     aboutStory?: string;
@@ -278,6 +279,7 @@ const DEFAULT_SETTINGS = {
   heroHeadline: "Authentic Kenyan Flavors on the A1 Highway in Kitale",
   heroSubtitle: "Savor the finest slow-roasted Mbuzi Choma, spicy Chips Masala, and hot flame-grilled meats. A perfect traveler's stopover!",
   heroImage: "",
+  heroBackgroundImage: "",
   aboutTitle: "Our Journey",
   aboutSubtitle: "From roadside grill to Kitale's favorite culinary destination",
   aboutStory: "Started as a small premium grill, bringing rich, authentic local flavors to long-distance travelers and locals alike. In 2022, we opened our landmark open-air terrace bistro on the A1 Highway in Kitale, offering a relaxing rest stop and fine dining. Today, we are recognized for our premium Mbuzi Choma, traditional sides, and warm hospitable atmosphere.",

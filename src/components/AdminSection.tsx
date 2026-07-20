@@ -1459,6 +1459,56 @@ export default function AdminSection({
                   </p>
                 </div>
               </div>
+
+              {/* Headline Background Image */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4">
+                <div className="md:col-span-8 space-y-1">
+                  <label className="text-xs font-semibold text-zinc-400 flex items-center justify-between">
+                    <span>Headline Background Image (sits behind logo, headline & subtitle)</span>
+                    <span className="text-[10px] text-zinc-500 font-normal">or upload from device</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Paste an image URL, or upload a file below"
+                      value={settingsForm.heroBackgroundImage || ""}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, heroBackgroundImage: e.target.value })}
+                      className="flex-1 bg-zinc-950 border border-zinc-850 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
+                    />
+                    <label className="flex items-center gap-1.5 px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-xl cursor-pointer transition-all active:scale-95 whitespace-nowrap">
+                      {uploadingId === "heroBackgroundImage" ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>{uploadingId === "heroBackgroundImage" ? "Uploading..." : "Upload photo"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, "heroBackgroundImage")}
+                        className="hidden"
+                        disabled={uploadingId !== null}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-zinc-600">A wide, uncluttered photo works best — it fades smoothly into the page behind your headline text.</p>
+                </div>
+
+                <div className="md:col-span-4 bg-zinc-950/60 border border-zinc-850 rounded-xl p-4 flex flex-col items-center justify-center gap-3">
+                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Background Preview</span>
+                  <div className="relative h-28 w-full rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 shadow-lg">
+                    <img
+                      src={settingsForm.heroBackgroundImage || BROKEN_IMAGE_PLACEHOLDER}
+                      alt="Headline background preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
+                      }}
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* About us narrative / Our Journey */}
