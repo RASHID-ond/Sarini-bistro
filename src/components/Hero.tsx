@@ -39,7 +39,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
   const operatingDaysText = settings.operatingDays || "Open 7 Days a Week";
 
   return (
-    <div className="relative overflow-hidden bg-[#0B0B0D] text-white pt-16 pb-32 bg-noise">
+    <div className="relative isolate overflow-hidden bg-[#0B0B0D] text-white pt-16 pb-32 bg-noise">
       {/* Background radial glowing effects matching mockup atmospheric lighting */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] glow-pink-radial -z-10 pointer-events-none animate-pulse" style={{ animationDuration: '10s' }} />
       <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] glow-peach-radial -z-10 pointer-events-none animate-pulse" style={{ animationDuration: '14s' }} />
@@ -97,7 +97,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
         
-        <div className="relative">
+        <div className="relative isolate">
           {heroBackgroundUrl && (
             <div className="absolute inset-0 -z-10 overflow-hidden rounded-[32px] pointer-events-none">
               <img
