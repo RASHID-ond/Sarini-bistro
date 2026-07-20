@@ -114,8 +114,8 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to bottom, var(--hero-blend-bg) 0%, transparent 5%, transparent 93%, var(--hero-blend-bg) 100%), " +
-                    "linear-gradient(to right, var(--hero-blend-bg) 0%, transparent 4%, transparent 96%, var(--hero-blend-bg) 100%)"
+                    "linear-gradient(to bottom, var(--hero-blend-bg) 0%, transparent 2.5%, transparent 96%, var(--hero-blend-bg) 100%), " +
+                    "linear-gradient(to right, var(--hero-blend-bg) 0%, transparent 2%, transparent 98%, var(--hero-blend-bg) 100%)"
                 }}
               />
             </div>
