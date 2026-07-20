@@ -126,7 +126,6 @@ interface DbSchema {
     aboutStory?: string;
     operatingHours?: string;
     operatingDays?: string;
-    galleryImages?: string[];
     websiteImages?: { id: string; name: string; src: string; }[];
   };
   notification_logs: NotificationLog[];
@@ -284,7 +283,6 @@ const DEFAULT_SETTINGS = {
   aboutStory: "Started as a small premium grill, bringing rich, authentic local flavors to long-distance travelers and locals alike. In 2022, we opened our landmark open-air terrace bistro on the A1 Highway in Kitale, offering a relaxing rest stop and fine dining. Today, we are recognized for our premium Mbuzi Choma, traditional sides, and warm hospitable atmosphere.",
   operatingHours: "6:30 AM – 8:30 PM",
   operatingDays: "Open 7 Days a Week",
-  galleryImages: [] as string[],
   websiteImages: [
     { id: "tomato-left", name: "Top Left Tomato Slice", src: "" },
     { id: "tomato-right", name: "Top Right Tomato Slice", src: "" },

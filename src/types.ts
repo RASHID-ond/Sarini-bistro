@@ -93,7 +93,6 @@ export interface RestaurantSettings {
   aboutStory?: string;
   operatingHours?: string;
   operatingDays?: string;
-  galleryImages?: string[];
   websiteImages?: WebsiteImage[];
 }
 

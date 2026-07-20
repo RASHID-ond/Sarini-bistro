@@ -638,7 +638,7 @@ export default function App() {
                     <div className="py-6 text-center relative overflow-hidden">
                       {/* Floating basil leaf decoration exactly like mockup */}
                       {getWebsiteImage("quote-leaf-left", "") && (
-                        <div className="absolute top-1/2 left-2 w-8 h-8 opacity-60 -translate-y-1/2 rotate-[12deg] pointer-events-none animate-float-slow">
+                        <div className="absolute top-1/2 left-2 w-14 h-14 sm:w-20 sm:h-20 opacity-60 -translate-y-1/2 rotate-[12deg] pointer-events-none animate-float-slow">
                           <img 
                             src={getWebsiteImage("quote-leaf-left", "")} 
                             alt={getWebsiteImageName("quote-leaf-left", "Basil Leaf")} 
@@ -648,7 +648,7 @@ export default function App() {
                         </div>
                       )}
                       {getWebsiteImage("quote-leaf-right", "") && (
-                        <div className="absolute top-1/3 right-2 w-8 h-8 opacity-65 rotate-[-35deg] pointer-events-none animate-float-reverse">
+                        <div className="absolute top-1/3 right-2 w-14 h-14 sm:w-20 sm:h-20 opacity-65 rotate-[-35deg] pointer-events-none animate-float-reverse">
                           <img 
                             src={getWebsiteImage("quote-leaf-right", "")} 
                             alt={getWebsiteImageName("quote-leaf-right", "Basil Leaf")} 

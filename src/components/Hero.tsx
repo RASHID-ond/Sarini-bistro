@@ -49,7 +49,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
       {/* Floating Decorative Ingredients with float animations exactly like mockup */}
       {/* Top Left Tomato */}
       {getImg("tomato-left", "") && (
-        <div className="absolute top-24 left-[12%] w-14 h-14 md:w-16 md:h-16 opacity-80 pointer-events-none animate-float-slow">
+        <div className="absolute top-24 left-[12%] w-20 h-20 md:w-28 md:h-28 opacity-80 pointer-events-none animate-float-slow">
           <img 
             src={getImg("tomato-left", "")} 
             alt={getImgName("tomato-left", "Tomato Slice")} 
@@ -60,7 +60,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
       )}
       {/* Top Right Tomato */}
       {getImg("tomato-right", "") && (
-        <div className="absolute top-20 right-[14%] w-14 h-14 md:w-18 md:h-18 opacity-85 pointer-events-none animate-float-reverse">
+        <div className="absolute top-20 right-[14%] w-20 h-20 md:w-28 md:h-28 opacity-85 pointer-events-none animate-float-reverse">
           <img 
             src={getImg("tomato-right", "")} 
             alt={getImgName("tomato-right", "Tomato Slice")} 
@@ -71,7 +71,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
       )}
       {/* Left Basil Leaf */}
       {getImg("basil-left", "") && (
-        <div className="absolute bottom-1/3 left-[15%] w-8 h-8 md:w-10 md:h-10 opacity-70 pointer-events-none animate-float-reverse">
+        <div className="absolute bottom-1/3 left-[15%] w-14 h-14 md:w-20 md:h-20 opacity-70 pointer-events-none animate-float-reverse">
           <img 
             src={getImg("basil-left", "")} 
             alt={getImgName("basil-left", "Basil Leaf")} 
@@ -82,7 +82,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
       )}
       {/* Right Basil Leaf */}
       {getImg("basil-right", "") && (
-        <div className="absolute bottom-1/4 right-[15%] w-8 h-8 md:w-10 md:h-10 opacity-75 pointer-events-none animate-float-slow">
+        <div className="absolute bottom-1/4 right-[15%] w-14 h-14 md:w-20 md:h-20 opacity-75 pointer-events-none animate-float-slow">
           <img 
             src={getImg("basil-right", "")} 
             alt={getImgName("basil-right", "Basil Leaf")} 

@@ -73,6 +73,16 @@ export default function AdminSection({
 
   const [newCategoryName, setNewCategoryName] = React.useState("");
   const [showCategoryForm, setShowCategoryForm] = React.useState(false);
+  const menuFormRef = React.useRef<HTMLFormElement>(null);
+
+  // Whenever the menu form opens (Add Dish or Edit), scroll it into view.
+  // Without this, clicking Edit on an item further down the page opens the
+  // form above the item list, out of view, which reads as if nothing happened.
+  React.useEffect(() => {
+    if (showMenuForm && menuFormRef.current) {
+      menuFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showMenuForm, editingItem]);
 
   // Settings Credentials States (Local for form editing)
   const [settingsForm, setSettingsForm] = React.useState<any>({ ...settings });
@@ -113,11 +123,6 @@ export default function AdminSection({
           const updated = [...(settingsForm.websiteImages || [])];
           updated[websiteImageIndex] = { ...updated[websiteImageIndex], src: result.url };
           setSettingsForm({ ...settingsForm, websiteImages: updated });
-        } else if (targetKey.startsWith("gallery-")) {
-          const idx = parseInt(targetKey.split("-")[1]);
-          const updatedGallery = [...(settingsForm.galleryImages || [])];
-          updatedGallery[idx] = result.url;
-          setSettingsForm({ ...settingsForm, galleryImages: updatedGallery });
         } else if (targetKey === "menu-item") {
           setMenuFormData(prev => ({ ...prev, image: result.url }));
         } else {
@@ -177,15 +182,25 @@ export default function AdminSection({
     const priceNum = parseFloat(menuFormData.price);
     if (isNaN(priceNum)) return;
 
+    // If the admin typed a brand-new category, register it automatically
+    // so it appears as a filter tab on the live menu (silently ignore if
+    // it already exists — the server rejects duplicates).
+    const trimmedCategory = menuFormData.category.trim();
+    if (trimmedCategory && !categories.includes(trimmedCategory)) {
+      await onAddCategory(trimmedCategory);
+    }
+
     let success = false;
     if (editingItem) {
       success = await onEditMenuItem(editingItem.id, {
         ...menuFormData,
+        category: trimmedCategory,
         price: priceNum,
       });
     } else {
       success = await onAddMenuItem({
         ...menuFormData,
+        category: trimmedCategory,
         price: priceNum,
       });
     }
@@ -212,31 +227,6 @@ export default function AdminSection({
       setNewCategoryName("");
       setShowCategoryForm(false);
     }
-  };
-
-  const handleAddGalleryImage = () => {
-    const currentImages = settingsForm.galleryImages || [];
-    setSettingsForm({
-      ...settingsForm,
-      galleryImages: [...currentImages, ""]
-    });
-  };
-
-  const handleEditGalleryImage = (idx: number, val: string) => {
-    const currentImages = [...(settingsForm.galleryImages || [])];
-    currentImages[idx] = val;
-    setSettingsForm({
-      ...settingsForm,
-      galleryImages: currentImages
-    });
-  };
-
-  const handleRemoveGalleryImage = (idx: number) => {
-    const currentImages = (settingsForm.galleryImages || []).filter((_: any, i: number) => i !== idx);
-    setSettingsForm({
-      ...settingsForm,
-      galleryImages: currentImages
-    });
   };
 
   const handleSaveContent = async (e: React.FormEvent) => {
@@ -659,7 +649,7 @@ export default function AdminSection({
             )}
 
             {showMenuForm && (
-              <form onSubmit={handleSaveMenuForm} className="bg-zinc-900 border border-zinc-850 p-6 rounded-2xl shadow-lg space-y-4 max-w-2xl animate-none">
+              <form ref={menuFormRef} onSubmit={handleSaveMenuForm} className="bg-zinc-900 border border-zinc-850 p-6 rounded-2xl shadow-lg space-y-4 max-w-2xl animate-none">
                 <h4 className="font-bold text-white border-b border-zinc-850 pb-2 flex items-center gap-2">
                   <Edit3 className="w-4.5 h-4.5 text-brand-coral" />
                   {editingItem ? "Edit Menu Item" : "Create Menu Item"}
@@ -698,15 +688,21 @@ export default function AdminSection({
                   {/* Category */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-zinc-400 block uppercase tracking-wider">Category *</label>
-                    <select
+                    <input
+                      type="text"
+                      required
+                      list="category-suggestions"
+                      placeholder="e.g. Grilled Meats"
                       value={menuFormData.category}
                       onChange={(e) => setMenuFormData({ ...menuFormData, category: e.target.value })}
                       className="w-full bg-zinc-950 border border-zinc-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-coral"
-                    >
+                    />
+                    <datalist id="category-suggestions">
                       {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat} value={cat} />
                       ))}
-                    </select>
+                    </datalist>
+                    <p className="text-[10px] text-zinc-600">Type any category name — new ones are created automatically.</p>
                   </div>
 
                   {/* Image URL */}
@@ -1530,89 +1526,6 @@ export default function AdminSection({
                     className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Media Gallery Images Manager */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-850 pb-1.5">
-                <h4 className="font-extrabold text-orange-400 text-[10px] uppercase tracking-widest font-mono">
-                  5. Restaurant Media & Image Gallery
-                </h4>
-                <button
-                  type="button"
-                  onClick={handleAddGalleryImage}
-                  className="flex items-center gap-1 text-[10px] bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Gallery Image URL
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(settingsForm.galleryImages || []).map((imgUrl: string, idx: number) => (
-                  <div key={idx} className="bg-zinc-950/60 border border-zinc-850 p-3.5 rounded-xl space-y-3 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold text-zinc-500">Image #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveGalleryImage(idx)}
-                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg transition-all cursor-pointer"
-                          title="Delete Image"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Paste image URL (from Unsplash, Imgur, etc.)"
-                          value={imgUrl}
-                          onChange={(e) => handleEditGalleryImage(idx, e.target.value)}
-                          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-orange-500"
-                        />
-                        <label className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-lg cursor-pointer transition-all active:scale-95 whitespace-nowrap">
-                          {uploadingId === `gallery-${idx}` ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Upload className="w-3.5 h-3.5" />
-                          )}
-                          <span>{uploadingId === `gallery-${idx}` ? "..." : "Upload"}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleFileUpload(e, `gallery-${idx}`)}
-                            className="hidden"
-                            disabled={uploadingId !== null}
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    {imgUrl && (
-                      <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 mt-2">
-                        <img
-                          src={imgUrl}
-                          alt={`Gallery image ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
-                          }}
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                {(settingsForm.galleryImages || []).length === 0 && (
-                  <div className="col-span-1 md:col-span-2 py-10 text-center text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl space-y-2">
-                    <Sparkles className="w-8 h-8 text-zinc-600 mx-auto" />
-                    <p className="font-bold text-xs text-zinc-400">No Gallery Photos Configured</p>
-                    <p className="text-[10px] text-zinc-600">Click "Add Gallery Image URL" to populate your website's catalog.</p>
-                  </div>
-                )}
               </div>
             </div>
 
