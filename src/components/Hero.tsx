@@ -114,8 +114,8 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to bottom, var(--hero-blend-bg) 0%, transparent 10%, transparent 88%, var(--hero-blend-bg) 100%), " +
-                    "linear-gradient(to right, var(--hero-blend-bg) 0%, transparent 8%, transparent 92%, var(--hero-blend-bg) 100%)"
+                    "linear-gradient(to bottom, var(--hero-blend-bg) 0%, transparent 5%, transparent 93%, var(--hero-blend-bg) 100%), " +
+                    "linear-gradient(to right, var(--hero-blend-bg) 0%, transparent 4%, transparent 96%, var(--hero-blend-bg) 100%)"
                 }}
               />
             </div>
@@ -135,11 +135,17 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
 
             {/* Sarini Bistro Main Responsive Headline */}
             <div className="max-w-[720px] mx-auto space-y-5">
-              <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight text-[#F5F5F7] leading-[1.1] font-sans">
+              <h1
+                className="text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight text-[#F5F5F7] leading-[1.1] font-sans"
+                style={heroBackgroundUrl ? { textShadow: "0 2px 16px rgba(0,0,0,0.5)" } : undefined}
+              >
                 {headline}
               </h1>
               
-              <p className="text-xs sm:text-sm text-[#A8A8B3] max-w-2xl mx-auto leading-relaxed tracking-wide font-medium">
+              <p
+                className="text-xs sm:text-sm text-[#A8A8B3] max-w-2xl mx-auto leading-relaxed tracking-wide font-medium"
+                style={heroBackgroundUrl ? { textShadow: "0 1px 10px rgba(0,0,0,0.5)" } : undefined}
+              >
                 {subtitle}
               </p>
             </div>
