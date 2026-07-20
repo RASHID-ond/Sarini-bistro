@@ -65,6 +65,7 @@ export default function App() {
 
   const [activePlateIndex, setActivePlateIndex] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   
   // App General Settings
   const [settings, setSettings] = React.useState<RestaurantSettings>({
@@ -79,20 +80,13 @@ export default function App() {
   } as any);
 
   const experiencePlates = React.useMemo(() => {
-    const defaults = [
-      { id: "plate-1", src: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=800" },
-      { id: "plate-2", src: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800" },
-      { id: "plate-3", src: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800" },
-      { id: "plate-4", src: "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800" },
-      { id: "plate-5", src: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800" }
-    ];
     if (settings && settings.websiteImages) {
       const plates = settings.websiteImages.filter((img: any) => img.id.startsWith("plate-"));
       if (plates.length > 0) {
         return plates.map((p: any) => ({ id: p.id, src: p.src }));
       }
     }
-    return defaults;
+    return [];
   }, [settings]);
 
   const getWebsiteImage = React.useCallback((id: string, defaultSrc: string) => {
@@ -121,11 +115,12 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
+    if (experiencePlates.length === 0) return;
     const timer = setInterval(() => {
       setActivePlateIndex((prev) => (prev + 1) % experiencePlates.length);
     }, 2500);
     return () => clearInterval(timer);
-  }, []);
+  }, [experiencePlates.length]);
   const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
   const [categories, setCategories] = React.useState<string[]>([]);
 
@@ -237,6 +232,8 @@ export default function App() {
       }
     } catch (err) {
       console.error("Failed to synchronize with server", err);
+    } finally {
+      setIsInitialLoad(false);
     }
   }, []);
 
@@ -470,6 +467,17 @@ export default function App() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  if (isInitialLoad) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0D] text-[#F5F5F7]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-full border-2 border-zinc-800 border-t-brand-coral animate-spin" />
+          <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Loading Sarini Bistro…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen flex flex-col bg-[#0B0B0D] bg-noise text-[#F5F5F7] ${theme}`}>
       <Navbar
@@ -629,22 +637,26 @@ export default function App() {
                     {/* Compelling Minimal Quote Section */}
                     <div className="py-6 text-center relative overflow-hidden">
                       {/* Floating basil leaf decoration exactly like mockup */}
-                      <div className="absolute top-1/2 left-2 w-8 h-8 opacity-60 -translate-y-1/2 rotate-[12deg] pointer-events-none animate-float-slow">
-                        <img 
-                          src={getWebsiteImage("quote-leaf-left", "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150")} 
-                          alt={getWebsiteImageName("quote-leaf-left", "Basil Leaf")} 
-                          className="w-full h-full object-contain select-none"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="absolute top-1/3 right-2 w-8 h-8 opacity-65 rotate-[-35deg] pointer-events-none animate-float-reverse">
-                        <img 
-                          src={getWebsiteImage("quote-leaf-right", "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150")} 
-                          alt={getWebsiteImageName("quote-leaf-right", "Basil Leaf")} 
-                          className="w-full h-full object-contain select-none"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
+                      {getWebsiteImage("quote-leaf-left", "") && (
+                        <div className="absolute top-1/2 left-2 w-8 h-8 opacity-60 -translate-y-1/2 rotate-[12deg] pointer-events-none animate-float-slow">
+                          <img 
+                            src={getWebsiteImage("quote-leaf-left", "")} 
+                            alt={getWebsiteImageName("quote-leaf-left", "Basil Leaf")} 
+                            className="w-full h-full object-contain select-none"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                      {getWebsiteImage("quote-leaf-right", "") && (
+                        <div className="absolute top-1/3 right-2 w-8 h-8 opacity-65 rotate-[-35deg] pointer-events-none animate-float-reverse">
+                          <img 
+                            src={getWebsiteImage("quote-leaf-right", "")} 
+                            alt={getWebsiteImageName("quote-leaf-right", "Basil Leaf")} 
+                            className="w-full h-full object-contain select-none"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
 
                       <blockquote className="space-y-4 px-6">
                         <p className="text-base sm:text-lg font-black tracking-tight text-zinc-300 leading-snug font-sans">

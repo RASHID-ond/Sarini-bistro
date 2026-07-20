@@ -32,7 +32,7 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
 
   const headline = settings.heroHeadline || "Authentic Kenyan Flavors on the A1 Highway in Kitale";
   const subtitle = settings.heroSubtitle || "Savor the finest slow-roasted Mbuzi Choma, spicy Chips Masala, and hot flame-grilled meats. A perfect traveler's stopover!";
-  const heroImgUrl = settings.heroImage || "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800";
+  const heroImgUrl = settings.heroImage || "";
   const operatingHrsText = settings.operatingHours || "6:30 AM – 8:30 PM";
   const operatingDaysText = settings.operatingDays || "Open 7 Days a Week";
 
@@ -48,41 +48,50 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
 
       {/* Floating Decorative Ingredients with float animations exactly like mockup */}
       {/* Top Left Tomato */}
-      <div className="absolute top-24 left-[12%] w-14 h-14 md:w-16 md:h-16 opacity-80 pointer-events-none animate-float-slow">
-        <img 
-          src={getImg("tomato-left", "https://images.unsplash.com/photo-1561131245-c8e4518a7aac?auto=format&fit=crop&q=80&w=200")} 
-          alt={getImgName("tomato-left", "Tomato Slice")} 
-          className="w-full h-full object-contain rotate-[15deg] select-none"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      {getImg("tomato-left", "") && (
+        <div className="absolute top-24 left-[12%] w-14 h-14 md:w-16 md:h-16 opacity-80 pointer-events-none animate-float-slow">
+          <img 
+            src={getImg("tomato-left", "")} 
+            alt={getImgName("tomato-left", "Tomato Slice")} 
+            className="w-full h-full object-contain rotate-[15deg] select-none"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
       {/* Top Right Tomato */}
-      <div className="absolute top-20 right-[14%] w-14 h-14 md:w-18 md:h-18 opacity-85 pointer-events-none animate-float-reverse">
-        <img 
-          src={getImg("tomato-right", "https://images.unsplash.com/photo-1561131245-c8e4518a7aac?auto=format&fit=crop&q=80&w=200")} 
-          alt={getImgName("tomato-right", "Tomato Slice")} 
-          className="w-full h-full object-contain rotate-[-35deg] select-none"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      {getImg("tomato-right", "") && (
+        <div className="absolute top-20 right-[14%] w-14 h-14 md:w-18 md:h-18 opacity-85 pointer-events-none animate-float-reverse">
+          <img 
+            src={getImg("tomato-right", "")} 
+            alt={getImgName("tomato-right", "Tomato Slice")} 
+            className="w-full h-full object-contain rotate-[-35deg] select-none"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
       {/* Left Basil Leaf */}
-      <div className="absolute bottom-1/3 left-[15%] w-8 h-8 md:w-10 md:h-10 opacity-70 pointer-events-none animate-float-reverse">
-        <img 
-          src={getImg("basil-left", "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150")} 
-          alt={getImgName("basil-left", "Basil Leaf")} 
-          className="w-full h-full object-contain rotate-[45deg] select-none"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      {getImg("basil-left", "") && (
+        <div className="absolute bottom-1/3 left-[15%] w-8 h-8 md:w-10 md:h-10 opacity-70 pointer-events-none animate-float-reverse">
+          <img 
+            src={getImg("basil-left", "")} 
+            alt={getImgName("basil-left", "Basil Leaf")} 
+            className="w-full h-full object-contain rotate-[45deg] select-none"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
       {/* Right Basil Leaf */}
-      <div className="absolute bottom-1/4 right-[15%] w-8 h-8 md:w-10 md:h-10 opacity-75 pointer-events-none animate-float-slow">
-        <img 
-          src={getImg("basil-right", "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150")} 
-          alt={getImgName("basil-right", "Basil Leaf")} 
-          className="w-full h-full object-contain rotate-[-25deg] select-none"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      {getImg("basil-right", "") && (
+        <div className="absolute bottom-1/4 right-[15%] w-8 h-8 md:w-10 md:h-10 opacity-75 pointer-events-none animate-float-slow">
+          <img 
+            src={getImg("basil-right", "")} 
+            alt={getImgName("basil-right", "Basil Leaf")} 
+            className="w-full h-full object-contain rotate-[-25deg] select-none"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
         
@@ -161,12 +170,14 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
           {/* Luxury frame border wrapping the food plate with soft ambient shadow */}
           <div className="relative group p-4 sm:p-5 rounded-full bg-zinc-950/40 border border-white/5 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
             <div className="absolute inset-0 bg-gradient-to-tr from-brand-coral/10 to-transparent rounded-full blur-xl pointer-events-none animate-pulse" />
-            <img
-              src={heroImgUrl}
-              alt={`${settings.restaurantName} Featured Dish`}
-              className="w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] object-cover rounded-full shadow-inner border border-zinc-800/40 transition-transform duration-700 group-hover:scale-[1.02]"
-              referrerPolicy="no-referrer"
-            />
+            {heroImgUrl && (
+              <img
+                src={heroImgUrl}
+                alt={`${settings.restaurantName} Featured Dish`}
+                className="w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] object-cover rounded-full shadow-inner border border-zinc-800/40 transition-transform duration-700 group-hover:scale-[1.02]"
+                referrerPolicy="no-referrer"
+              />
+            )}
           </div>
         </div>
 

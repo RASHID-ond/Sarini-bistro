@@ -6,6 +6,17 @@ import { Order, Reservation, MenuItem, NotificationLog, RestaurantSettings, Anal
 import { API_URL } from "../config";
 import { compressImage } from "../utils/compressImage";
 
+// Neutral placeholder shown only if a configured image URL fails to load.
+// This is generated locally (no external stock photo dependency).
+const BROKEN_IMAGE_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'>` +
+      `<rect width='400' height='300' fill='#18181b'/>` +
+      `<text x='50%' y='50%' font-family='sans-serif' font-size='16' fill='#52525b' text-anchor='middle' dominant-baseline='middle'>Image unavailable</text>` +
+    `</svg>`
+  );
+
 interface AdminSectionProps {
   orders: Order[];
   reservations: Reservation[];
@@ -707,7 +718,7 @@ export default function AdminSection({
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="https://images.unsplash.com/photo..."
+                        placeholder="Paste an image URL, or upload a file below"
                         value={menuFormData.image}
                         onChange={(e) => setMenuFormData({ ...menuFormData, image: e.target.value })}
                         className="flex-1 bg-zinc-950 border border-zinc-850 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-coral"
@@ -1358,7 +1369,7 @@ export default function AdminSection({
                       alt="Logo preview"
                       className="h-16 w-16 object-contain rounded-full border border-brand-coral/20 p-1 bg-zinc-900 shadow-md"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800";
+                        (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
                       }}
                       referrerPolicy="no-referrer"
                     />
@@ -1409,7 +1420,7 @@ export default function AdminSection({
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="e.g. https://images.unsplash.com/..."
+                        placeholder="Paste an image URL, or upload a file below"
                         value={settingsForm.heroImage || ""}
                         onChange={(e) => setSettingsForm({ ...settingsForm, heroImage: e.target.value })}
                         className="flex-1 bg-zinc-950 border border-zinc-850 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
@@ -1438,11 +1449,11 @@ export default function AdminSection({
                   <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Hero Plate Preview</span>
                   <div className="relative h-28 w-28 rounded-full overflow-hidden border border-zinc-800 p-1 bg-zinc-900 shadow-lg">
                     <img
-                      src={settingsForm.heroImage || "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800"}
+                      src={settingsForm.heroImage || BROKEN_IMAGE_PLACEHOLDER}
                       alt="Hero preview"
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800";
+                        (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
                       }}
                       referrerPolicy="no-referrer"
                     />
@@ -1586,7 +1597,7 @@ export default function AdminSection({
                           alt={`Gallery image ${idx + 1}`}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800";
+                            (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
                           }}
                           referrerPolicy="no-referrer"
                         />
@@ -1676,7 +1687,7 @@ export default function AdminSection({
                           alt={imgObj.name}
                           className="max-h-24 max-w-full object-contain"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800";
+                            (e.target as HTMLImageElement).src = BROKEN_IMAGE_PLACEHOLDER;
                           }}
                           referrerPolicy="no-referrer"
                         />

@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Plus, Check, ShoppingCart, Sparkles, FilterX } from "lucide-react";
+import { Search, Plus, Check, ShoppingCart, Sparkles, FilterX, UtensilsCrossed } from "lucide-react";
 import { MenuItem } from "../types";
 
 interface MenuSectionProps {
@@ -112,12 +112,18 @@ export default function MenuSection({
                 >
                   {/* Image container */}
                   <div className="relative overflow-hidden aspect-video bg-zinc-950 shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="object-cover w-full h-full transition-transform duration-550 group-hover:scale-102 opacity-95 group-hover:opacity-100"
-                      referrerPolicy="no-referrer"
-                    />
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="object-cover w-full h-full transition-transform duration-550 group-hover:scale-102 opacity-95 group-hover:opacity-100"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-700">
+                        <UtensilsCrossed className="w-10 h-10" />
+                      </div>
+                    )}
                     
                     {/* Category Overlay */}
                     <span className="absolute top-3 left-3 bg-zinc-950/90 backdrop-blur-md text-brand-coral text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md border border-zinc-850 font-mono">

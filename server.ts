@@ -139,7 +139,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Sizzling, slow-roasted prime goat meat, tender and flame-charred to perfection. Served with freshly cut kachumbari.",
     price: 1500.00,
     category: "Grilled Meats",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: false
   },
@@ -149,7 +149,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Succulent, meaty beef short ribs marinated in ginger, garlic, and wild local spices, flame-grilled on hardwood charcoal.",
     price: 1250.00,
     category: "Grilled Meats",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: false
   },
@@ -159,7 +159,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Half spring chicken marinated in our secret Swahili barbecue sauce and roasted slowly over open coals.",
     price: 1200.00,
     category: "Grilled Meats",
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: false
   },
@@ -169,7 +169,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Sautéed organic collard greens with sweet onions and ripe tomatoes, served with fluffy hot white corn ugali.",
     price: 600.00,
     category: "Vegetarian",
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -179,7 +179,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "A slow-simmered mixture of soft local maize and red beans sautéed with onions, peppers, and fresh coriander.",
     price: 500.00,
     category: "Vegetarian",
-    image: "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -189,7 +189,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Creamy yellow beans simmered in a spiced coconut milk gravy, paired with two soft layered golden chapatis.",
     price: 750.00,
     category: "Vegetarian",
-    image: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -199,7 +199,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Crispy skin-on potato fries tossed in a spicy, rich tomato masala sauce with garlic, chili, and coriander.",
     price: 450.00,
     category: "Sides",
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -209,7 +209,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Soft mashed potatoes, sweet corn, green peas, and pumpkin leaves, flavored with spring onions and light local butter.",
     price: 500.00,
     category: "Sides",
-    image: "https://images.unsplash.com/photo-1572656631137-7935297eff55?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -219,7 +219,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Chilled hand-diced tomatoes, sweet red onions, fresh coriander, and fiery green chilies, finished with fresh lime juice.",
     price: 250.00,
     category: "Sides",
-    image: "https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -229,7 +229,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "An immunity-boosting traditional tonic brewed with fresh crushed ginger, lemon slices, organic forest honey, and cane sugar.",
     price: 350.00,
     category: "Drinks",
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -239,7 +239,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Deep red herbal hibiscus tea cold-brewed and mixed with freshly squeezed lemons and wild crushed garden mint leaves.",
     price: 450.00,
     category: "Drinks",
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   },
@@ -249,7 +249,7 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     description: "Freshly squeezed passion fruit juice harvested from our local orchards in Kitale, served ice-cold.",
     price: 300.00,
     category: "Drinks",
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=800",
+    image: "",
     available: true,
     vegetarian: true
   }
@@ -278,30 +278,25 @@ const DEFAULT_SETTINGS = {
   logoUrl: "",
   heroHeadline: "Authentic Kenyan Flavors on the A1 Highway in Kitale",
   heroSubtitle: "Savor the finest slow-roasted Mbuzi Choma, spicy Chips Masala, and hot flame-grilled meats. A perfect traveler's stopover!",
-  heroImage: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800",
+  heroImage: "",
   aboutTitle: "Our Journey",
   aboutSubtitle: "From roadside grill to Kitale's favorite culinary destination",
   aboutStory: "Started as a small premium grill, bringing rich, authentic local flavors to long-distance travelers and locals alike. In 2022, we opened our landmark open-air terrace bistro on the A1 Highway in Kitale, offering a relaxing rest stop and fine dining. Today, we are recognized for our premium Mbuzi Choma, traditional sides, and warm hospitable atmosphere.",
   operatingHours: "6:30 AM – 8:30 PM",
   operatingDays: "Open 7 Days a Week",
-  galleryImages: [
-    "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800",
-    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=800",
-    "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800",
-    "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&q=80&w=800"
-  ],
+  galleryImages: [] as string[],
   websiteImages: [
-    { id: "tomato-left", name: "Top Left Tomato Slice", src: "https://images.unsplash.com/photo-1561131245-c8e4518a7aac?auto=format&fit=crop&q=80&w=200" },
-    { id: "tomato-right", name: "Top Right Tomato Slice", src: "https://images.unsplash.com/photo-1561131245-c8e4518a7aac?auto=format&fit=crop&q=80&w=200" },
-    { id: "basil-left", name: "Left Basil Leaf", src: "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150" },
-    { id: "basil-right", name: "Right Basil Leaf", src: "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150" },
-    { id: "quote-leaf-left", name: "Quote Section Left Leaf", src: "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150" },
-    { id: "quote-leaf-right", name: "Quote Section Right Leaf", src: "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?auto=format&fit=crop&q=80&w=150" },
-    { id: "plate-1", name: "Experience Plate 1", src: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=800" },
-    { id: "plate-2", name: "Experience Plate 2", src: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800" },
-    { id: "plate-3", name: "Experience Plate 3", src: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800" },
-    { id: "plate-4", name: "Experience Plate 4", src: "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=800" },
-    { id: "plate-5", name: "Experience Plate 5", src: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800" }
+    { id: "tomato-left", name: "Top Left Tomato Slice", src: "" },
+    { id: "tomato-right", name: "Top Right Tomato Slice", src: "" },
+    { id: "basil-left", name: "Left Basil Leaf", src: "" },
+    { id: "basil-right", name: "Right Basil Leaf", src: "" },
+    { id: "quote-leaf-left", name: "Quote Section Left Leaf", src: "" },
+    { id: "quote-leaf-right", name: "Quote Section Right Leaf", src: "" },
+    { id: "plate-1", name: "Experience Plate 1", src: "" },
+    { id: "plate-2", name: "Experience Plate 2", src: "" },
+    { id: "plate-3", name: "Experience Plate 3", src: "" },
+    { id: "plate-4", name: "Experience Plate 4", src: "" },
+    { id: "plate-5", name: "Experience Plate 5", src: "" }
   ]
 };
 
@@ -416,7 +411,7 @@ app.post("/api/menu/items", async (req, res) => {
     description: description || "",
     price: parseFloat(price),
     category,
-    image: image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
+    image: image || "",
     available: available !== undefined ? available : true
   };
   db.menu_items.push(newItem);
