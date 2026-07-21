@@ -31,6 +31,37 @@ const supabase = createClient(
 );
 const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "images";
 
+// Admin authentication: the same password the admin types into the login
+// screen must be sent as the "x-admin-password" header on every admin
+// mutation. This enforces admin-only actions on the SERVER, not just in the
+// UI — previously "admin mode" was only a client-side flag, so anyone could
+// call these endpoints directly regardless of the frontend gate.
+// Falls back to the existing hardcoded password if ADMIN_PASSWORD isn't set
+// on Render yet, so nothing breaks before it's configured — set a real
+// ADMIN_PASSWORD env var in production.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sarini2026";
+
+function requireAdmin(req: any, res: any, next: any) {
+  const provided = req.headers["x-admin-password"];
+  if (!provided || provided !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized: valid admin credentials are required for this action." });
+  }
+  next();
+}
+
+// Extracts the storage object path from a Supabase Storage public URL, e.g.
+// "https://xxx.supabase.co/storage/v1/object/public/images/foo.jpg" -> "foo.jpg"
+// Returns null if the URL isn't a Supabase Storage URL for our bucket (e.g.
+// an external URL the admin pasted manually) — in that case we simply clear
+// the reference without attempting to delete anything from storage.
+function extractStoragePath(url: string): string | null {
+  if (!url) return null;
+  const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.substring(idx + marker.length));
+}
+
 // Initial Database Structure
 interface MenuItem {
   id: string;
@@ -286,8 +317,6 @@ const DEFAULT_SETTINGS = {
   operatingHours: "6:30 AM – 8:30 PM",
   operatingDays: "Open 7 Days a Week",
   websiteImages: [
-    { id: "tomato-left", name: "Top Left Tomato Slice", src: "" },
-    { id: "tomato-right", name: "Top Right Tomato Slice", src: "" },
     { id: "basil-left", name: "Left Basil Leaf", src: "" },
     { id: "basil-right", name: "Right Basil Leaf", src: "" },
     { id: "quote-leaf-left", name: "Quote Section Left Leaf", src: "" },
@@ -399,7 +428,7 @@ app.get("/api/menu", async (req, res) => {
   res.json({ menu_items: db.menu_items, categories: db.categories });
 });
 
-app.post("/api/menu/items", async (req, res) => {
+app.post("/api/menu/items", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { name, description, price, category, image, available } = req.body;
   if (!name || !price || !category) {
@@ -419,7 +448,7 @@ app.post("/api/menu/items", async (req, res) => {
   res.status(201).json(newItem);
 });
 
-app.put("/api/menu/items/:id", async (req, res) => {
+app.put("/api/menu/items/:id", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { id } = req.params;
   const index = db.menu_items.findIndex(item => item.id === id);
@@ -440,7 +469,7 @@ app.put("/api/menu/items/:id", async (req, res) => {
   res.json(db.menu_items[index]);
 });
 
-app.delete("/api/menu/items/:id", async (req, res) => {
+app.delete("/api/menu/items/:id", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { id } = req.params;
   const filtered = db.menu_items.filter(item => item.id !== id);
@@ -453,7 +482,7 @@ app.delete("/api/menu/items/:id", async (req, res) => {
 });
 
 // Categories API
-app.post("/api/menu/categories", async (req, res) => {
+app.post("/api/menu/categories", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { name } = req.body;
   if (!name) {
@@ -551,7 +580,7 @@ app.post("/api/orders", async (req, res) => {
 });
 
 // Update order status
-app.put("/api/orders/:id/status", async (req, res) => {
+app.put("/api/orders/:id/status", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { id } = req.params;
   const { orderStatus, paymentStatus } = req.body;
@@ -641,7 +670,7 @@ app.post("/api/reservations", async (req, res) => {
   res.status(201).json(newReservation);
 });
 
-app.put("/api/reservations/:id/status", async (req, res) => {
+app.put("/api/reservations/:id/status", requireAdmin, async (req, res) => {
   const db = await readDb();
   const { id } = req.params;
   const { status } = req.body;
@@ -763,7 +792,7 @@ app.get("/api/admin/settings", async (req, res) => {
   res.json(db.settings);
 });
 
-app.put("/api/admin/settings", async (req, res) => {
+app.put("/api/admin/settings", requireAdmin, async (req, res) => {
   const db = await readDb();
 
   db.settings = {
@@ -784,7 +813,7 @@ app.put("/api/admin/settings", async (req, res) => {
 });
 
 // Image Upload API — stores images in Supabase Storage instead of local disk
-app.post("/api/admin/upload", async (req, res) => {
+app.post("/api/admin/upload", requireAdmin, async (req, res) => {
   try {
     const { fileName, base64Data } = req.body;
     if (!base64Data) {
@@ -847,6 +876,74 @@ app.post("/api/admin/upload", async (req, res) => {
   } catch (err: any) {
     console.error("File upload error:", err);
     res.status(500).json({ error: err.message || "Failed to upload image file." });
+  }
+});
+
+// Image Deletion API — removes the file from Supabase Storage (if it's one
+// of ours), then clears the reference from the appropriate database record.
+app.post("/api/admin/delete-image", requireAdmin, async (req, res) => {
+  try {
+    const { url, target, settingsField, menuItemId, websiteImageId } = req.body;
+
+    if (!url || !target) {
+      return res.status(400).json({ error: "Both 'url' and 'target' are required." });
+    }
+    if (target === "settings" && !settingsField) {
+      return res.status(400).json({ error: "'settingsField' is required when target is 'settings'." });
+    }
+    if (target === "menuItem" && !menuItemId) {
+      return res.status(400).json({ error: "'menuItemId' is required when target is 'menuItem'." });
+    }
+    if (target === "websiteImage" && !websiteImageId) {
+      return res.status(400).json({ error: "'websiteImageId' is required when target is 'websiteImage'." });
+    }
+
+    // Only attempt to delete from Supabase Storage if this URL actually
+    // points into our bucket. Admins can also paste external image URLs,
+    // which we should never try to delete from storage.
+    const storagePath = extractStoragePath(url);
+    if (storagePath) {
+      const { error: removeError } = await supabase.storage.from(STORAGE_BUCKET).remove([storagePath]);
+      if (removeError) {
+        // Log but don't hard-fail — the DB reference should still be
+        // cleared even if the underlying file was already gone.
+        console.error("Failed to remove file from storage:", removeError);
+      }
+    }
+
+    const db = await readDb();
+    let responsePayload: any = { success: true };
+
+    if (target === "settings") {
+      (db.settings as any)[settingsField] = "";
+      await writeDb(db);
+      responsePayload.settings = db.settings;
+    } else if (target === "menuItem") {
+      const idx = db.menu_items.findIndex(item => item.id === menuItemId);
+      if (idx === -1) {
+        return res.status(404).json({ error: "Menu item not found." });
+      }
+      db.menu_items[idx].image = "";
+      await writeDb(db);
+      responsePayload.menuItem = db.menu_items[idx];
+    } else if (target === "websiteImage") {
+      const images = db.settings.websiteImages || [];
+      const idx = images.findIndex((img: any) => img.id === websiteImageId);
+      if (idx === -1) {
+        return res.status(404).json({ error: "Website image slot not found." });
+      }
+      images[idx].src = "";
+      db.settings.websiteImages = images;
+      await writeDb(db);
+      responsePayload.settings = db.settings;
+    } else {
+      return res.status(400).json({ error: `Unknown target: ${target}` });
+    }
+
+    res.json(responsePayload);
+  } catch (err: any) {
+    console.error("Image deletion error:", err);
+    res.status(500).json({ error: err.message || "Failed to delete image." });
   }
 });
 

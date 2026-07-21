@@ -33,6 +33,7 @@ interface AdminSectionProps {
   onAddCategory: (name: string) => Promise<boolean>;
   onUpdateSettings: (data: any) => Promise<boolean>;
   onRefreshData: () => void;
+  onAdminAuthenticated: (password: string) => void;
 }
 
 export default function AdminSection({
@@ -51,6 +52,7 @@ export default function AdminSection({
   onAddCategory,
   onUpdateSettings,
   onRefreshData,
+  onAdminAuthenticated,
 }: AdminSectionProps) {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = React.useState(false);
   const [adminPassword, setAdminPassword] = React.useState("");
@@ -87,6 +89,7 @@ export default function AdminSection({
   // Settings Credentials States (Local for form editing)
   const [settingsForm, setSettingsForm] = React.useState<any>({ ...settings });
   const [uploadingId, setUploadingId] = React.useState<string | null>(null);
+  const [deletingImageKey, setDeletingImageKey] = React.useState<string | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, targetKey: string, websiteImageIndex?: number) => {
     const file = event.target.files?.[0];
@@ -105,6 +108,7 @@ export default function AdminSection({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-admin-password": adminPassword,
         },
         body: JSON.stringify({
           fileName: uploadFileName,
@@ -139,6 +143,59 @@ export default function AdminSection({
     }
   };
 
+  // Deletes an image from Supabase Storage and clears the corresponding
+  // database record, via the backend (never touches Storage directly from
+  // the browser). Requires admin credentials, same as upload/save actions.
+  const handleDeleteImage = async (
+    url: string,
+    target: "settings" | "menuItem" | "websiteImage",
+    extra: { settingsField?: string; menuItemId?: string; websiteImageId?: string }
+  ) => {
+    const key =
+      target === "settings" ? `settings-${extra.settingsField}` :
+      target === "menuItem" ? `menuItem-${extra.menuItemId}` :
+      `websiteImage-${extra.websiteImageId}`;
+
+    if (!window.confirm("Delete this image? This cannot be undone.")) return;
+
+    setDeletingImageKey(key);
+    try {
+      const response = await fetch(`${API_URL}/api/admin/delete-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": adminPassword,
+        },
+        body: JSON.stringify({ url, target, ...extra }),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || `Delete failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Reflect the deletion in the local form immediately.
+      if (target === "settings" && extra.settingsField) {
+        setSettingsForm((prev: any) => ({ ...prev, [extra.settingsField as string]: "" }));
+      } else if (target === "menuItem") {
+        setMenuFormData(prev => ({ ...prev, image: "" }));
+      } else if (target === "websiteImage" && result.settings?.websiteImages) {
+        setSettingsForm((prev: any) => ({ ...prev, websiteImages: result.settings.websiteImages }));
+      }
+
+      // Refresh site-wide data so the deleted image disappears everywhere
+      // immediately, not just in this form.
+      onRefreshData();
+    } catch (error: any) {
+      console.error("Delete image failed:", error);
+      alert(`Failed to delete image: ${error.message || "please try again."}`);
+    } finally {
+      setDeletingImageKey(null);
+    }
+  };
+
   // Sync local settings form from the server exactly once, on first load.
   // After that, this form is owned by the admin: background polling refreshes
   // (every 10s in App.tsx) must NEVER silently overwrite in-progress edits or
@@ -157,6 +214,7 @@ export default function AdminSection({
     if (adminPassword === "sarini2026") {
       setIsAdminAuthenticated(true);
       setAuthError("");
+      onAdminAuthenticated(adminPassword);
     } else {
       setAuthError("Incorrect system password. Access denied.");
     }
@@ -734,6 +792,28 @@ export default function AdminSection({
                           disabled={uploadingId !== null}
                         />
                       </label>
+                      {menuFormData.image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (editingItem) {
+                              handleDeleteImage(menuFormData.image, "menuItem", { menuItemId: editingItem.id });
+                            } else {
+                              // New, unsaved item — no DB record exists yet, so just clear the field locally.
+                              setMenuFormData({ ...menuFormData, image: "" });
+                            }
+                          }}
+                          disabled={deletingImageKey !== null}
+                          className="flex items-center gap-1 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          title="Delete image"
+                        >
+                          {deletingImageKey === `menuItem-${editingItem?.id}` ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1377,6 +1457,21 @@ export default function AdminSection({
                   <p className="text-[10px] text-zinc-500">
                     {settingsForm.logoUrl ? "Custom Logo Active" : "Using Text-based Branding"}
                   </p>
+                  {settingsForm.logoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(settingsForm.logoUrl, "settings", { settingsField: "logoUrl" })}
+                      disabled={deletingImageKey !== null}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {deletingImageKey === "settings-logoUrl" ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                      Delete Logo
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1457,6 +1552,21 @@ export default function AdminSection({
                   <p className="text-[10px] text-zinc-500 text-center leading-tight">
                     This image sits inside the prominent concave arch in the hero banner.
                   </p>
+                  {settingsForm.heroImage && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(settingsForm.heroImage, "settings", { settingsField: "heroImage" })}
+                      disabled={deletingImageKey !== null}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {deletingImageKey === "settings-heroImage" ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                      Delete Image
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1507,6 +1617,21 @@ export default function AdminSection({
                       referrerPolicy="no-referrer"
                     />
                   </div>
+                  {settingsForm.heroBackgroundImage && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(settingsForm.heroBackgroundImage, "settings", { settingsField: "heroBackgroundImage" })}
+                      disabled={deletingImageKey !== null}
+                      className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {deletingImageKey === "settings-heroBackgroundImage" ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                      Delete Image
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1582,7 +1707,7 @@ export default function AdminSection({
             {/* Website Decorative & Experience Images */}
             <div className="space-y-4">
               <h4 className="font-extrabold text-orange-400 text-[10px] uppercase tracking-widest border-b border-zinc-850 pb-1.5 font-mono">
-                6. Decorative & Section Assets (Tomato Slices, Basil Leaves, Plates)
+                6. Decorative & Section Assets (Basil Leaves, Plates)
               </h4>
               <p className="text-zinc-400 text-xs leading-normal">
                 Customize the decorative images used as floating background accents and interactive plates across your pages. You can change both their visual links and their display labels.
@@ -1594,7 +1719,24 @@ export default function AdminSection({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-mono font-bold text-orange-400">ID: {imgObj.id}</span>
-                        <span className="text-[10px] font-mono font-bold text-zinc-500">Asset #{idx + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold text-zinc-500">Asset #{idx + 1}</span>
+                          {imgObj.src && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteImage(imgObj.src, "websiteImage", { websiteImageId: imgObj.id })}
+                              disabled={deletingImageKey !== null}
+                              className="p-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                              title="Delete this image"
+                            >
+                              {deletingImageKey === `websiteImage-${imgObj.id}` ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="space-y-1">

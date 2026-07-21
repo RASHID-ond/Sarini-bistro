@@ -49,28 +49,6 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
       <div className="absolute bottom-0 right-0 w-1/3 h-1/2 curved-wave-right -z-10 pointer-events-none" />
 
       {/* Floating Decorative Ingredients with float animations exactly like mockup */}
-      {/* Top Left Tomato */}
-      {getImg("tomato-left", "") && (
-        <div className="absolute top-24 left-[12%] w-20 h-20 md:w-28 md:h-28 opacity-80 pointer-events-none animate-float-slow">
-          <img 
-            src={getImg("tomato-left", "")} 
-            alt={getImgName("tomato-left", "Tomato Slice")} 
-            className="w-full h-full object-contain rotate-[15deg] select-none"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      )}
-      {/* Top Right Tomato */}
-      {getImg("tomato-right", "") && (
-        <div className="absolute top-20 right-[14%] w-20 h-20 md:w-28 md:h-28 opacity-85 pointer-events-none animate-float-reverse">
-          <img 
-            src={getImg("tomato-right", "")} 
-            alt={getImgName("tomato-right", "Tomato Slice")} 
-            className="w-full h-full object-contain rotate-[-35deg] select-none"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      )}
       {/* Left Basil Leaf */}
       {getImg("basil-left", "") && (
         <div className="absolute bottom-1/3 left-[15%] w-14 h-14 md:w-20 md:h-20 opacity-70 pointer-events-none animate-float-reverse">

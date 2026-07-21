@@ -66,6 +66,10 @@ export default function App() {
   const [activePlateIndex, setActivePlateIndex] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(false);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+  // Set once the admin successfully logs in (from AdminSection). Sent as the
+  // "x-admin-password" header on every admin-mutating request so the backend
+  // can actually enforce that only an authenticated admin can perform them.
+  const [adminToken, setAdminToken] = React.useState("");
   
   // App General Settings
   const [settings, setSettings] = React.useState<RestaurantSettings>({
@@ -346,7 +350,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify({ orderStatus: status, paymentStatus: payStatus }),
       });
       if (res.ok) {
@@ -361,7 +365,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/reservations/${resId}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
@@ -377,7 +381,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/menu/items`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify(data),
       });
       if (res.ok) {
@@ -394,7 +398,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/menu/items/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify(data),
       });
       if (res.ok) {
@@ -411,6 +415,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/menu/items/${id}`, {
         method: "DELETE",
+        headers: { "x-admin-password": adminToken },
       });
       if (res.ok) {
         fetchAllData();
@@ -426,7 +431,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/menu/categories`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify({ name }),
       });
       if (res.ok) {
@@ -443,7 +448,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_URL}/api/admin/settings`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
         body: JSON.stringify(data),
       });
       if (res.ok) {
@@ -832,6 +837,7 @@ export default function App() {
             onAddCategory={handleAddCategory}
             onUpdateSettings={handleUpdateSettings}
             onRefreshData={fetchAllData}
+            onAdminAuthenticated={setAdminToken}
           />
         )}
       </main>
