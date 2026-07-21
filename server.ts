@@ -353,6 +353,19 @@ async function readDb(): Promise<DbSchema> {
 
     const db: DbSchema = data.data;
     db.settings = { ...DEFAULT_SETTINGS, ...db.settings };
+
+    // One-time cleanup: earlier versions of this app seeded "tomato-left"
+    // and "tomato-right" decorative asset slots. These have been retired —
+    // strip them out of any existing database that still has them, and
+    // persist the fix so this only needs to run once.
+    const retiredAssetIds = ["tomato-left", "tomato-right"];
+    if (db.settings.websiteImages?.some((img: any) => retiredAssetIds.includes(img.id))) {
+      db.settings.websiteImages = db.settings.websiteImages.filter(
+        (img: any) => !retiredAssetIds.includes(img.id)
+      );
+      await writeDb(db);
+    }
+
     return db;
   } catch (err) {
     console.error("Error reading database from Supabase", err);
