@@ -136,15 +136,15 @@ export default function Hero({ onOrderClick, onReserveClick, settings }: HeroPro
             {/* Sarini Bistro Main Responsive Headline */}
             <div className="max-w-[720px] mx-auto space-y-5">
               <h1
-                className="text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight text-[#F5F5F7] leading-[1.1] font-sans"
-                style={heroBackgroundUrl ? { textShadow: "0 2px 16px rgba(0,0,0,0.5)" } : undefined}
+                className={`text-4xl sm:text-5xl lg:text-[60px] font-black tracking-tight leading-[1.1] font-sans ${heroBackgroundUrl ? "text-[#E6B655]" : "text-[#F5F5F7]"}`}
+                style={heroBackgroundUrl ? { textShadow: "0 2px 16px rgba(0,0,0,0.55)" } : undefined}
               >
                 {headline}
               </h1>
               
               <p
-                className="text-xs sm:text-sm text-[#A8A8B3] max-w-2xl mx-auto leading-relaxed tracking-wide font-medium"
-                style={heroBackgroundUrl ? { textShadow: "0 1px 10px rgba(0,0,0,0.5)" } : undefined}
+                className={`text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed tracking-wide font-medium ${heroBackgroundUrl ? "text-[#EAD9AE]" : "text-[#A8A8B3]"}`}
+                style={heroBackgroundUrl ? { textShadow: "0 1px 10px rgba(0,0,0,0.55)" } : undefined}
               >
                 {subtitle}
               </p>
