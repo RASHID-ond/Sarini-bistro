@@ -1,8 +1,8 @@
 import React from "react";
 import { 
-  ClipboardList, Calendar, Plus, Edit3, Trash2, TrendingUp, Settings, Bell, RefreshCw, CheckCircle2, XCircle, Clock, Truck, Play, CreditCard, DollarSign, Users, Sparkles, LogIn, Upload, Loader2
+  ClipboardList, Calendar, Plus, Edit3, Trash2, TrendingUp, Settings, Bell, RefreshCw, CheckCircle2, XCircle, Clock, Truck, Play, CreditCard, DollarSign, Users, Sparkles, LogIn, Upload, Loader2, Mail, MailOpen
 } from "lucide-react";
-import { Order, Reservation, MenuItem, NotificationLog, RestaurantSettings, AnalyticsStats } from "../types";
+import { Order, Reservation, ContactMessage, MenuItem, NotificationLog, RestaurantSettings, AnalyticsStats } from "../types";
 import { API_URL } from "../config";
 import { compressImage } from "../utils/compressImage";
 
@@ -20,6 +20,7 @@ const BROKEN_IMAGE_PLACEHOLDER =
 interface AdminSectionProps {
   orders: Order[];
   reservations: Reservation[];
+  contactMessages: ContactMessage[];
   menuItems: MenuItem[];
   categories: string[];
   notificationLogs: NotificationLog[];
@@ -27,6 +28,8 @@ interface AdminSectionProps {
   analytics: AnalyticsStats | null;
   onUpdateOrderStatus: (orderId: string, status: string, payStatus?: string) => void;
   onUpdateReservationStatus: (resId: string, status: string) => void;
+  onUpdateContactStatus: (id: string, status: string) => void;
+  onDeleteContactMessage: (id: string) => Promise<boolean>;
   onAddMenuItem: (data: any) => Promise<boolean>;
   onEditMenuItem: (id: string, data: any) => Promise<boolean>;
   onDeleteMenuItem: (id: string) => Promise<boolean>;
@@ -39,6 +42,7 @@ interface AdminSectionProps {
 export default function AdminSection({
   orders,
   reservations,
+  contactMessages,
   menuItems,
   categories,
   notificationLogs,
@@ -46,6 +50,8 @@ export default function AdminSection({
   analytics,
   onUpdateOrderStatus,
   onUpdateReservationStatus,
+  onUpdateContactStatus,
+  onDeleteContactMessage,
   onAddMenuItem,
   onEditMenuItem,
   onDeleteMenuItem,
@@ -58,7 +64,7 @@ export default function AdminSection({
   const [adminPassword, setAdminPassword] = React.useState("");
   const [authError, setAuthError] = React.useState("");
 
-  const [activeSubTab, setActiveSubTab] = React.useState<"orders" | "reservations" | "menu" | "analytics" | "notifications" | "settings" | "content">("orders");
+  const [activeSubTab, setActiveSubTab] = React.useState<"orders" | "reservations" | "contact" | "menu" | "analytics" | "notifications" | "settings" | "content">("orders");
   const [orderFilter, setOrderFilter] = React.useState<"all" | "pending" | "preparing" | "ready" | "completed">("all");
 
   // Menu Form States
@@ -391,6 +397,7 @@ export default function AdminSection({
           {[
             { id: "orders", label: "Active Orders", icon: ClipboardList },
             { id: "reservations", label: "Table Bookings", icon: Calendar },
+            { id: "contact", label: "Contact Messages", icon: Mail, badge: contactMessages.filter(m => m.status === "new").length },
             { id: "menu", label: "Menu Editor", icon: Edit3 },
             { id: "content", label: "Website Content", icon: Sparkles },
             { id: "analytics", label: "Sales Analytics", icon: TrendingUp },
@@ -403,7 +410,7 @@ export default function AdminSection({
               <button
                 key={sub.id}
                 onClick={() => setActiveSubTab(sub.id as any)}
-                className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer relative ${
                   isActive
                     ? "bg-brand-coral text-zinc-950 shadow-lg shadow-brand-coral/20"
                     : "text-zinc-400 hover:bg-zinc-850 hover:text-white"
@@ -411,6 +418,11 @@ export default function AdminSection({
               >
                 <Icon className="w-4 h-4" />
                 {sub.label}
+                {!!sub.badge && (
+                  <span className={`ml-0.5 flex items-center justify-center w-4.5 h-4.5 rounded-full text-[9px] font-extrabold ${isActive ? "bg-zinc-950 text-brand-coral" : "bg-red-500 text-white"}`}>
+                    {sub.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -648,6 +660,88 @@ export default function AdminSection({
                 <Calendar className="w-12 h-12 text-zinc-600 mx-auto animate-pulse" />
                 <p className="font-bold text-white mt-2">No Reservations Registered</p>
                 <p className="text-zinc-500 text-xs">When customers book tables, they appear here.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2b. CONTACT US MESSAGES */}
+        {activeSubTab === "contact" && (
+          <div className="bg-zinc-900 border border-zinc-850 rounded-2xl shadow-lg overflow-hidden text-white animate-none">
+            <div className="p-5 border-b border-zinc-850 flex justify-between items-center flex-wrap gap-4">
+              <h3 className="font-bold text-white text-base">Contact Us Messages</h3>
+              <span className="text-zinc-400 text-xs font-semibold">Total Messages: {contactMessages.length}</span>
+            </div>
+
+            {contactMessages.length > 0 ? (
+              <div className="divide-y divide-zinc-850">
+                {contactMessages.map((msg) => (
+                  <div key={msg.id} className={`p-5 transition-colors ${msg.status === "new" ? "bg-brand-coral/[0.03]" : ""}`}>
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm">{msg.fullName}</span>
+                          <span className="text-[10px] font-mono text-zinc-500 uppercase">#{msg.id}</span>
+                          {msg.status === "new" ? (
+                            <span className="bg-brand-coral/10 text-brand-coral border border-brand-coral/20 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase flex items-center gap-1">
+                              <Mail className="w-2.5 h-2.5" /> New
+                            </span>
+                          ) : (
+                            <span className="bg-zinc-800 text-zinc-400 border border-zinc-700 px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase flex items-center gap-1">
+                              <MailOpen className="w-2.5 h-2.5" /> Read
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-zinc-400 flex-wrap">
+                          <span className="font-mono">{msg.email}</span>
+                          <span className="font-mono">{msg.phone}</span>
+                          <span className="text-zinc-600">{new Date(msg.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {msg.status === "new" ? (
+                          <button
+                            onClick={() => onUpdateContactStatus(msg.id, "read")}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer"
+                          >
+                            <MailOpen className="w-3.5 h-3.5" />
+                            Mark Read
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onUpdateContactStatus(msg.id, "new")}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Mark Unread
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (window.confirm("Delete this message? This cannot be undone.")) {
+                              await onDeleteContactMessage(msg.id);
+                            }
+                          }}
+                          className="p-1.5 text-zinc-500 hover:text-red-500 hover:bg-zinc-850 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Message"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="mt-3 text-sm text-zinc-300 leading-relaxed bg-zinc-950/60 border border-zinc-850 rounded-xl p-3.5 whitespace-pre-wrap">
+                      {msg.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center text-zinc-400">
+                <Mail className="w-12 h-12 text-zinc-600 mx-auto animate-pulse" />
+                <p className="font-bold text-white mt-2">No Messages Yet</p>
+                <p className="text-zinc-500 text-xs">When customers reach out via the Contact Us form, they appear here.</p>
               </div>
             )}
           </div>

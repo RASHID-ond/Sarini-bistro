@@ -54,6 +54,16 @@ export interface Reservation {
   createdAt: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: "new" | "read";
+  createdAt: string;
+}
+
 export interface NotificationLog {
   id: string;
   orderId?: string;

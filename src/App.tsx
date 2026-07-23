@@ -6,11 +6,12 @@ import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import MenuSection from "./components/MenuSection";
 import ReservationSection from "./components/ReservationSection";
+import ContactSection from "./components/ContactSection";
 import TrackingSection from "./components/TrackingSection";
 import CartDrawer from "./components/CartDrawer";
 import CheckoutModal from "./components/CheckoutModal";
 import AdminSection from "./components/AdminSection";
-import { MenuItem, CartItem, Order, Reservation, NotificationLog, RestaurantSettings, AnalyticsStats } from "./types";
+import { MenuItem, CartItem, Order, Reservation, ContactMessage, NotificationLog, RestaurantSettings, AnalyticsStats } from "./types";
 import { Clock, MapPin, Phone, Star } from "lucide-react";
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
       if (hash === "admin" || params.get("admin") === "true" || window.location.pathname.endsWith("/admin")) {
         return "admin";
       }
-      if (["home", "menu", "reserve", "track"].includes(hash)) {
+      if (["home", "menu", "reserve", "contact", "track"].includes(hash)) {
         return hash;
       }
     } catch (e) {
@@ -38,7 +39,7 @@ export default function App() {
       
       if (hash === "admin" || params.get("admin") === "true" || window.location.pathname.endsWith("/admin")) {
         setActiveTab("admin");
-      } else if (["home", "menu", "reserve", "track"].includes(hash)) {
+      } else if (["home", "menu", "reserve", "contact", "track"].includes(hash)) {
         setActiveTab(hash);
       }
     };
@@ -131,6 +132,7 @@ export default function App() {
   // Admin and Data Logs (Synced from server)
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [reservations, setReservations] = React.useState<Reservation[]>([]);
+  const [contactMessages, setContactMessages] = React.useState<ContactMessage[]>([]);
   const [notificationLogs, setNotificationLogs] = React.useState<NotificationLog[]>([]);
   const [analytics, setAnalytics] = React.useState<AnalyticsStats | null>(null);
 
@@ -221,6 +223,12 @@ export default function App() {
       if (resRes.ok) {
         const resData = await resRes.json();
         setReservations(resData);
+      }
+
+      const contactRes = await fetch(`${API_URL}/api/contact`);
+      if (contactRes.ok) {
+        const contactData = await contactRes.json();
+        setContactMessages(contactData);
       }
 
       const logsRes = await fetch(`${API_URL}/api/notifications/logs`);
@@ -343,6 +351,56 @@ export default function App() {
       console.error(err);
     }
     return null;
+  };
+
+  // Contact Us message submission
+  const handleSendContactMessage = async (data: any): Promise<ContactMessage | null> => {
+    try {
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const m: ContactMessage = await res.json();
+        fetchAllData();
+        return m;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return null;
+  };
+
+  const handleUpdateContactStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/contact/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": adminToken },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        fetchAllData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteContactMessage = async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_URL}/api/contact/${id}`, {
+        method: "DELETE",
+        headers: { "x-admin-password": adminToken },
+      });
+      if (res.ok) {
+        fetchAllData();
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
   };
 
   // Admin status mutations
@@ -812,6 +870,15 @@ export default function App() {
           />
         )}
 
+        {activeTab === "contact" && (
+          <ContactSection
+            onSendMessage={handleSendContactMessage}
+            restaurantPhone={settings.phone}
+            restaurantEmail={settings.email}
+            restaurantAddress={settings.address}
+          />
+        )}
+
         {activeTab === "track" && (
           <TrackingSection
             activeOrder={activeOrder}
@@ -824,6 +891,7 @@ export default function App() {
           <AdminSection
             orders={orders}
             reservations={reservations}
+            contactMessages={contactMessages}
             menuItems={menuItems}
             categories={categories}
             notificationLogs={notificationLogs}
@@ -831,6 +899,8 @@ export default function App() {
             analytics={analytics}
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onUpdateReservationStatus={handleUpdateReservationStatus}
+            onUpdateContactStatus={handleUpdateContactStatus}
+            onDeleteContactMessage={handleDeleteContactMessage}
             onAddMenuItem={handleAddMenuItem}
             onEditMenuItem={handleEditMenuItem}
             onDeleteMenuItem={handleDeleteMenuItem}

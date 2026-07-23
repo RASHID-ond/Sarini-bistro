@@ -28,6 +28,7 @@ export default function Navbar({
     { id: "home", label: "Home" },
     { id: "menu", label: "Menu" },
     { id: "reserve", label: "Reservations" },
+    { id: "contact", label: "Contact Us" },
     { id: "track", label: "Track Order" },
   ];
 

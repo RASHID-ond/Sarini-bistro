@@ -114,6 +114,16 @@ interface Reservation {
   createdAt: string;
 }
 
+interface ContactMessage {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: "new" | "read";
+  createdAt: string;
+}
+
 interface NotificationLog {
   id: string;
   orderId?: string;
@@ -131,6 +141,7 @@ interface DbSchema {
   categories: string[];
   orders: Order[];
   reservations: Reservation[];
+  contact_messages: ContactMessage[];
   settings: {
     restaurantName: string;
     phone: string;
@@ -344,6 +355,7 @@ async function readDb(): Promise<DbSchema> {
         categories: DEFAULT_CATEGORIES,
         orders: [],
         reservations: [],
+        contact_messages: [],
         settings: DEFAULT_SETTINGS,
         notification_logs: []
       };
@@ -353,6 +365,14 @@ async function readDb(): Promise<DbSchema> {
 
     const db: DbSchema = data.data;
     db.settings = { ...DEFAULT_SETTINGS, ...db.settings };
+
+    // Existing databases created before the Contact Us feature won't have
+    // this field yet — initialize it so downstream code can rely on it
+    // always being an array.
+    if (!Array.isArray(db.contact_messages)) {
+      db.contact_messages = [];
+      await writeDb(db);
+    }
 
     // One-time cleanup: earlier versions of this app seeded "tomato-left"
     // and "tomato-right" decorative asset slots. These have been retired —
@@ -374,6 +394,7 @@ async function readDb(): Promise<DbSchema> {
       categories: DEFAULT_CATEGORIES,
       orders: [],
       reservations: [],
+      contact_messages: [],
       settings: DEFAULT_SETTINGS,
       notification_logs: []
     };
@@ -704,6 +725,64 @@ app.put("/api/reservations/:id/status", requireAdmin, async (req, res) => {
   }
 
   res.json(db.reservations[index]);
+});
+
+// 3b. Contact Us Messages API
+app.get("/api/contact", async (req, res) => {
+  const db = await readDb();
+  res.json(db.contact_messages);
+});
+
+app.post("/api/contact", async (req, res) => {
+  const db = await readDb();
+  const { fullName, email, phone, message } = req.body;
+
+  if (!fullName || !email || !phone || !message) {
+    return res.status(400).json({ error: "Full name, email, phone, and message are all required" });
+  }
+
+  const newMessage: ContactMessage = {
+    id: "MSG" + Math.floor(1000 + Math.random() * 9000),
+    fullName,
+    email,
+    phone,
+    message,
+    status: "new",
+    createdAt: new Date().toISOString()
+  };
+
+  db.contact_messages.unshift(newMessage);
+  await writeDb(db);
+
+  res.status(201).json(newMessage);
+});
+
+app.put("/api/contact/:id/status", requireAdmin, async (req, res) => {
+  const db = await readDb();
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const index = db.contact_messages.findIndex(m => m.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Message not found" });
+  }
+
+  db.contact_messages[index].status = status;
+  await writeDb(db);
+
+  res.json(db.contact_messages[index]);
+});
+
+app.delete("/api/contact/:id", requireAdmin, async (req, res) => {
+  const db = await readDb();
+  const { id } = req.params;
+  const filtered = db.contact_messages.filter(m => m.id !== id);
+  if (filtered.length === db.contact_messages.length) {
+    return res.status(404).json({ error: "Message not found" });
+  }
+  db.contact_messages = filtered;
+  await writeDb(db);
+  res.json({ message: "Message deleted successfully" });
 });
 
 // 4. Analytics & Dashboard Stats
